@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Unified Communication Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "3xl": "1.5rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar hide for cleaner look if content overflows */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Subtle animation for background blobs */
+        @keyframes float {
+            0% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0px, 0px) scale(1); }
+        }
+        .animate-float {
+            animation: float 15s infinite ease-in-out;
+        }
+        .animate-float-delayed {
+            animation: float 20s infinite ease-in-out reverse;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display antialiased overflow-hidden">
+<div class="relative flex h-screen w-full flex-col overflow-hidden">
+<!-- Cinematic Background Elements -->
+<div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+<!-- Top Right Blue Glow -->
+<div class="absolute -top-[10%] -right-[20%] w-[600px] h-[600px] rounded-full bg-primary/20 blur-[120px] animate-float"></div>
+<!-- Bottom Left Dark Glow -->
+<div class="absolute -bottom-[10%] -left-[10%] w-[500px] h-[500px] rounded-full bg-indigo-900/20 blur-[100px] animate-float-delayed"></div>
+<!-- Subtle Grid Pattern Overlay -->
+<div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
+</div>
+<!-- Top Navigation Area -->
+<div class="relative z-10 flex w-full flex-row items-center justify-between px-6 pt-12 pb-2">
+<!-- Page Indicators -->
+<div class="flex flex-row gap-2">
+<div class="h-1.5 w-1.5 rounded-full bg-slate-300/30 dark:bg-slate-600"></div>
+<div class="h-1.5 w-6 rounded-full bg-primary"></div> <!-- Active Long Pill -->
+<div class="h-1.5 w-1.5 rounded-full bg-slate-300/30 dark:bg-slate-600"></div>
+<div class="h-1.5 w-1.5 rounded-full bg-slate-300/30 dark:bg-slate-600"></div>
+</div>
+<!-- Skip Button -->
+<button class="text-sm font-medium text-slate-500 hover:text-primary transition-colors dark:text-slate-400">
+                Skip
+            </button>
+</div>
+<!-- Main Content Area -->
+<div class="relative z-10 flex flex-1 flex-col justify-center px-6 py-4">
+<!-- Oversized Typography -->
+<div class="mb-6 space-y-2">
+<h1 class="text-5xl font-black tracking-tighter text-slate-900 dark:text-white leading-[0.95]">
+                    UNIFIED<br/>
+<span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-400">DASHBOARD</span>
+</h1>
+</div>
+<!-- Hero Video/Image Container -->
+<!-- Mimicking a device screen or high-tech display -->
+<div class="relative w-full aspect-[4/3] bg-slate-900 rounded-xl overflow-hidden shadow-2xl shadow-primary/10 border border-white/5 group">
+<!-- Fallback/Poster Image representing the dashboard -->
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Futuristic dashboard interface displaying chat messages and analytics graphs in dark mode" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA1mGc_M2JBOuAEfVPtKV-8uSuLAgYIuemWPeYnDCcPORvltMsRh3NCY98BhAffijse--TGok0HhVXw3SbKlXUswGIrZGWTuzikrKn8ztXwZSgB8_U8wCddnGEblHD4RUajGhqJsAR0_pB1VSykeYiY61eqvT3Es3ypN_inmRRgUMg6QgYHDbJNjTPetUyXEDhXGiKtzc2bAA1kdb6rYPh8yA4EC3gBLnD5otTp2H9e3dIJg4Ue92150a7iWvqKJH0nwPGEYqZnNgxo');">
+<!-- Overlay to darken image slightly for text contrast if needed, and blue tint -->
+<div class="absolute inset-0 bg-primary/10 mix-blend-overlay"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent opacity-80"></div>
+</div>
+<!-- Play Button / Interactive Hint -->
+<div class="absolute inset-0 flex items-center justify-center">
+<button class="flex items-center justify-center w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white shadow-lg shadow-black/20 group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-3xl filled">play_arrow</span>
+</button>
+</div>
+<!-- Floating UI Element (Simulating Notifications) -->
+<div class="absolute top-4 right-4 bg-background-dark/80 backdrop-blur-sm border border-white/10 rounded-lg p-2 flex items-center gap-2 shadow-lg animate-[bounce_3s_infinite]">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+<span class="text-xs font-mono text-white/80">LIVE FEED</span>
+</div>
+</div>
+<!-- Body Text -->
+<div class="mt-8">
+<p class="text-slate-600 dark:text-slate-300 text-lg font-normal leading-relaxed">
+                    Control every channel from one command center. AI filters the noise, you focus on the signal.
+                </p>
+</div>
+</div>
+<!-- Bottom Action Area -->
+<div class="relative z-10 w-full p-6 pb-10">
+<button class="relative w-full overflow-hidden rounded-xl bg-primary py-4 text-white shadow-lg shadow-primary/25 transition-all active:scale-[0.98] hover:shadow-primary/40 group">
+<div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+<div class="flex items-center justify-center gap-2">
+<span class="text-lg font-bold tracking-wide">Next</span>
+<span class="material-symbols-outlined text-xl">arrow_forward</span>
+</div>
+</button>
+</div>
+</div>
+</body></html>

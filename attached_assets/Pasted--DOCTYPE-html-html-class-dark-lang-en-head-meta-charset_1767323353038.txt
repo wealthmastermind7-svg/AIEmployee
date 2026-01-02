@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Welcome to AI Employee</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700&amp;family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Noto Sans", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                    animation: {
+                        'spin-slow': 'spin 15s linear infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased selection:bg-primary/30">
+<div class="relative flex h-screen w-full flex-col overflow-hidden bg-background-dark text-white">
+<!-- Cinematic Background Layer -->
+<div class="absolute inset-0 z-0 select-none">
+<!-- Simulated Video Background using an image -->
+<div class="absolute inset-0 bg-cover bg-center opacity-60 mix-blend-overlay" data-alt="Abstract dark futuristic network nodes and digital waves" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDzwkaaeFKe6Q5syrVQ1mdkKs0RKiuqvI9vJhwxEYGXRUJMNxOipBHEZDMDgE01rFCjNObvgy1MiCDwgqnaIHcYbuUbWWikEmBQdUmZ6OlfKCcNRasXnbR668lmtn_HMfIQNlJLlduII8DcArGerDXr97YKZ-a6KqJRdBoF9zGqQPZUpiJHxl5L5cjw7eT9sg4zEW_52NCpDVyeW_1nl2K1ToDbTa2UyIIQO8BTXhwT43wdrwx1gHaYa1ZbYdxtBGchIWuvq2_6uuR-");'>
+</div>
+<!-- Gradient Overlay for Contrast -->
+<div class="absolute inset-0 bg-gradient-to-b from-background-dark/90 via-background-dark/60 to-background-dark"></div>
+<!-- Abstract Decor Elements (Cinematic Visuals) -->
+<div class="absolute top-[30%] left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-40">
+<!-- Large Rotating Dashed Circle -->
+<div class="w-[600px] h-[600px] rounded-full border border-dashed border-white/10 animate-spin-slow"></div>
+</div>
+<div class="absolute top-[30%] left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-60">
+<!-- Inner Pulse Circle -->
+<div class="w-[400px] h-[400px] rounded-full border border-primary/20 animate-pulse-slow shadow-[0_0_50px_-10px_rgba(19,91,236,0.3)]"></div>
+</div>
+</div>
+<!-- Main Content Wrapper -->
+<div class="relative z-10 flex h-full flex-col justify-between px-6 pt-12 pb-8">
+<!-- Header / Status Area -->
+<div class="flex items-center justify-between opacity-0 animate-[fadeIn_0.5s_ease-out_forwards]">
+<!-- Logo Mark -->
+<div class="flex items-center gap-2">
+<div class="flex items-center justify-center size-8 rounded-lg bg-white/5 border border-white/10 backdrop-blur-sm">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="smart_toy">smart_toy</span>
+</div>
+<span class="text-sm font-bold tracking-widest uppercase text-white/50">AI Employee</span>
+</div>
+<!-- Optional Top Right Element (e.g. Skip) -->
+<button class="text-xs font-medium text-white/40 hover:text-white transition-colors">SKIP</button>
+</div>
+<!-- Hero Section -->
+<div class="flex flex-col items-center justify-center flex-grow py-8 text-center mt-8">
+<!-- Animated Icon/Visual Centerpiece -->
+<div class="mb-12 relative group">
+<div class="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-50 group-hover:opacity-75 transition-opacity duration-1000"></div>
+<div class="relative flex items-center justify-center size-20 rounded-2xl bg-gradient-to-br from-white/10 to-transparent border border-white/10 backdrop-blur-md shadow-2xl">
+<span class="material-symbols-outlined text-white text-4xl" data-icon="psychology">psychology</span>
+</div>
+</div>
+<!-- Headline -->
+<h1 class="font-display text-5xl md:text-6xl font-bold leading-[1.1] tracking-tight text-white drop-shadow-lg mb-6 opacity-0 animate-[slideUp_0.8s_ease-out_0.2s_forwards] translate-y-4">
+                    Your<br/>
+<span class="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-white/50">Workforce,</span><br/>
+<span class="text-primary">Evolved.</span>
+</h1>
+<!-- Sub-headline -->
+<p class="font-body text-base md:text-lg text-white/60 font-normal leading-relaxed max-w-xs mx-auto opacity-0 animate-[slideUp_0.8s_ease-out_0.4s_forwards] translate-y-4">
+                    Automate customer interactions across every channel instantly.
+                </p>
+</div>
+<!-- Bottom Actions Area -->
+<div class="w-full flex flex-col items-center gap-6 opacity-0 animate-[fadeIn_1s_ease-out_0.6s_forwards]">
+<!-- Pagination / Progress Dots -->
+<div class="flex items-center gap-2 mb-2">
+<div class="h-1.5 w-6 rounded-full bg-white transition-all"></div>
+<div class="h-1.5 w-1.5 rounded-full bg-white/20"></div>
+<div class="h-1.5 w-1.5 rounded-full bg-white/20"></div>
+</div>
+<!-- Primary Button -->
+<div class="w-full max-w-md">
+<button class="group relative flex w-full items-center justify-center overflow-hidden rounded-lg bg-primary py-4 px-5 text-white shadow-[0_0_20px_-5px_rgba(19,91,236,0.6)] transition-all hover:shadow-[0_0_30px_-5px_rgba(19,91,236,0.8)] hover:scale-[1.01] active:scale-[0.99]">
+<div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>
+<span class="font-display text-base font-bold tracking-wide">Deploy AI Agent</span>
+<span class="material-symbols-outlined ml-2 text-lg transition-transform group-hover:translate-x-1" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+<!-- Secondary Action -->
+<button class="text-sm font-bold text-white/50 hover:text-white transition-colors py-2 px-4 rounded-lg">
+                    Log In
+                </button>
+</div>
+</div>
+</div>
+<style>
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</body></html>
