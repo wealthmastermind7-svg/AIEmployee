@@ -31,15 +31,15 @@ export default function UsageScreen() {
       </View>
       <View style={styles.logInfo}>
         <ThemedText type="body" style={styles.logType}>
-          {item.type.replace('_', ' ').toUpperCase()}
+          {item.type.replace(/_/g, ' ').toUpperCase()}
         </ThemedText>
         <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-          {format(new Date(item.createdAt), "MMM d, h:mm a")}
+          {item.createdAt ? format(new Date(item.createdAt), "MMM d, h:mm a") : 'N/A'}
         </ThemedText>
       </View>
       <View style={styles.logQuantity}>
         <ThemedText type="body" style={{ fontWeight: "600" }}>
-          -{item.creditsUsed}
+          -{item.creditsUsed || 0}
         </ThemedText>
         <ThemedText type="caption" style={{ color: theme.textTertiary }}>
           Credits
@@ -79,12 +79,18 @@ export default function UsageScreen() {
 
         <ThemedText type="h4" style={styles.sectionTitle}>Recent Activity</ThemedText>
         <GlassCard noPadding style={styles.logsCard}>
-          {usageLogs?.map((log, index) => (
-            <React.Fragment key={log.id}>
-              {renderItem({ item: log })}
-              {index < usageLogs.length - 1 && <View style={styles.divider} />}
-            </React.Fragment>
-          ))}
+          {usageLogs && usageLogs.length > 0 ? (
+            usageLogs.map((log, index) => (
+              <React.Fragment key={log.id}>
+                {renderItem({ item: log })}
+                {index < usageLogs.length - 1 && <View style={styles.divider} />}
+              </React.Fragment>
+            ))
+          ) : (
+            <View style={{ padding: Spacing.xl, alignItems: 'center' }}>
+              <ThemedText type="body" style={{ color: theme.textTertiary }}>No usage logs found</ThemedText>
+            </View>
+          )}
         </GlassCard>
       </ScrollView>
     </View>
