@@ -10,6 +10,9 @@ import Animated, {
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { GlassCard } from "@/components/GlassCard";
 import { CircularProgress } from "@/components/CircularProgress";
@@ -30,6 +33,7 @@ interface DashboardStats {
 }
 
 export default function DashboardScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const theme = Colors.dark;
@@ -126,7 +130,7 @@ export default function DashboardScreen() {
             />
           </GlassCard>
 
-          <GlassCard style={styles.creditsCard}>
+          <GlassCard onPress={() => navigation.navigate("Usage")} style={styles.creditsCard}>
             <View style={styles.creditsHeader}>
               <View style={[styles.iconBadge, { backgroundColor: `${theme.primary}20` }]}>
                 <Feather name="cpu" size={18} color={theme.primary} />

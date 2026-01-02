@@ -431,7 +431,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Generate response
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini-realtime-preview",
         messages: chatMessages,
         max_tokens: 500,
       });
@@ -516,7 +516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const chatContent = messageHistory.map(m => `${m.role}: ${m.content}`).join("\n");
       
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini-realtime-preview",
         messages: [
           { role: "system", content: "Summarize this conversation in 2-3 sentences." },
           { role: "user", content: chatContent },
@@ -634,6 +634,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching stats:", error);
       res.status(500).json({ error: "Failed to fetch stats" });
+    }
+  });
+
+  // ========================================
+  // USAGE ROUTES
+  // ========================================
+
+  app.get("/api/businesses/:businessId/usage", async (req: Request, res: Response) => {
+    try {
+      const { businessId } = req.params;
+      const logs = await db.select().from(usageLogs)
+        .where(eq(usageLogs.businessId, businessId))
+        .orderBy(desc(usageLogs.createdAt))
+        .limit(50);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching usage logs:", error);
+      res.status(500).json({ error: "Failed to fetch usage logs" });
+    }
+  });
+
+  app.post("/api/businesses/:businessId/usage/limit", async (req: Request, res: Response) => {
+    try {
+      const { businessId } = req.params;
+      const { limit } = req.body;
+      
+      // For now we just update credits remaining as a way to control usage
+      await db.update(businesses)
+        .set({ aiCreditsRemaining: limit })
+        .where(eq(businesses.id, businessId));
+        
+      res.json({ success: true, newLimit: limit });
+    } catch (error) {
+      console.error("Error updating usage limit:", error);
+      res.status(500).json({ error: "Failed to update usage limit" });
     }
   });
 

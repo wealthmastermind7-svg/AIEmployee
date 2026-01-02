@@ -6,6 +6,7 @@ import ConversationDetailScreen from "@/screens/ConversationDetailScreen";
 import CreateAgentScreen from "@/screens/CreateAgentScreen";
 import AgentDetailScreen from "@/screens/AgentDetailScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
+import UsageScreen from "@/screens/UsageScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { Colors } from "@/constants/theme";
 import { useBusiness } from "@/contexts/BusinessContext";
@@ -15,6 +16,7 @@ export type RootStackParamList = {
   ConversationDetail: { conversationId: string };
   CreateAgent: undefined;
   AgentDetail: { agentId: string };
+  Usage: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -75,6 +77,14 @@ export default function RootStackNavigator() {
         component={AgentDetailScreen}
         options={{
           headerTitle: "Agent Details",
+          headerBackTitle: "Back",
+        }}
+      />
+      <Stack.Screen
+        name="Usage"
+        component={UsageScreen}
+        options={{
+          headerTitle: "AI Usage",
           headerBackTitle: "Back",
         }}
       />
