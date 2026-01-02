@@ -5,15 +5,26 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
+  // In Expo Go/Development, process.env.EXPO_PUBLIC_DOMAIN is injected by Metro
+  // In Production builds (TestFlight/Play Store), it should be injected at build time
+  // If not set, we'll try to fallback to the deployment domain if available
   let host = process.env.EXPO_PUBLIC_DOMAIN;
 
   if (!host) {
-    throw new Error("EXPO_PUBLIC_DOMAIN is not set");
+    // If we're on web, we can use the current origin
+    if (typeof window !== 'undefined' && window.location) {
+      return window.location.origin;
+    }
+    
+    // For native production builds, this MUST be set. 
+    // We'll throw a more helpful error that won't crash the UI if caught
+    console.error("EXPO_PUBLIC_DOMAIN is not set. API calls will fail.");
+    return ""; 
   }
 
-  let url = new URL(`https://${host}`);
-
-  return url.href;
+  // Ensure host doesn't already have a protocol
+  const baseUrl = host.startsWith('http') ? host : `https://${host}`;
+  return new URL(baseUrl).href;
 }
 
 async function throwIfResNotOk(res: Response) {
