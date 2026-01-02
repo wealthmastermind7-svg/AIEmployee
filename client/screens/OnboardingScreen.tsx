@@ -36,6 +36,7 @@ export default function OnboardingScreen() {
   const [currentPage, setCurrentPage] = useState(0);
   const pageOffset = useSharedValue(0);
   const [localBusinessName, setLocalBusinessName] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
   const { createBusiness } = useBusiness();
 
   const handlePageChange = (position: number) => {
