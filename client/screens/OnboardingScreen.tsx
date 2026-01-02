@@ -50,7 +50,8 @@ export default function OnboardingScreen() {
     const offsetX = event.nativeEvent.contentOffset.x;
     const page = Math.round(offsetX / SCREEN_WIDTH);
     if (page !== currentPage && page >= 0 && page <= 2) {
-      handlePageChange(page);
+      setCurrentPage(page);
+      pageOffset.value = withTiming(page, { duration: 300 });
     }
   };
 
@@ -305,7 +306,10 @@ export default function OnboardingScreen() {
       <View style={styles.bottomActions}>
         <PaginationDots />
         <Pressable
-          onPress={handleComplete}
+          onPress={() => {
+            console.log("Complete button pressed");
+            handleComplete();
+          }}
           style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
         >
           <ThemedText type="body" style={styles.buttonText}>Launch Your Workspace</ThemedText>
