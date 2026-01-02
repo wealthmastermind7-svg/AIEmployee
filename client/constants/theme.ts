@@ -1,30 +1,55 @@
 import { Platform } from "react-native";
 
-const tintColorLight = "#007AFF";
-const tintColorDark = "#0A84FF";
-
 export const Colors = {
   light: {
-    text: "#11181C",
+    text: "#FFFFFF",
+    textSecondary: "rgba(255, 255, 255, 0.6)",
+    textTertiary: "rgba(255, 255, 255, 0.4)",
     buttonText: "#FFFFFF",
-    tabIconDefault: "#687076",
-    tabIconSelected: tintColorLight,
-    link: "#007AFF",
-    backgroundRoot: "#FFFFFF", // Elevation 0
-    backgroundDefault: "#F2F2F2", // Elevation 1
-    backgroundSecondary: "#E6E6E6", // Elevation 2
-    backgroundTertiary: "#D9D9D9", // Elevation 3
+    tabIconDefault: "rgba(255, 255, 255, 0.5)",
+    tabIconSelected: "#135bec",
+    link: "#135bec",
+    primary: "#135bec",
+    primaryLight: "#3d7bf0",
+    success: "#34d399",
+    successBg: "rgba(52, 211, 153, 0.1)",
+    warning: "#f59e0b",
+    error: "#ef4444",
+    purple: "#c084fc",
+    backgroundRoot: "#101622",
+    backgroundDefault: "rgba(23, 29, 41, 0.6)",
+    backgroundSecondary: "rgba(23, 29, 41, 0.8)",
+    backgroundTertiary: "rgba(16, 22, 34, 0.9)",
+    glassBorder: "rgba(255, 255, 255, 0.08)",
+    glassHighlight: "rgba(255, 255, 255, 0.1)",
+    orb1: "#135bec",
+    orb2: "#2a3b55",
+    orb3: "#1a2333",
   },
   dark: {
-    text: "#ECEDEE",
+    text: "#FFFFFF",
+    textSecondary: "rgba(255, 255, 255, 0.6)",
+    textTertiary: "rgba(255, 255, 255, 0.4)",
     buttonText: "#FFFFFF",
-    tabIconDefault: "#9BA1A6",
-    tabIconSelected: tintColorDark,
-    link: "#0A84FF",
-    backgroundRoot: "#1F2123", // Elevation 0
-    backgroundDefault: "#2A2C2E", // Elevation 1
-    backgroundSecondary: "#353739", // Elevation 2
-    backgroundTertiary: "#404244", // Elevation 3
+    tabIconDefault: "rgba(255, 255, 255, 0.5)",
+    tabIconSelected: "#135bec",
+    link: "#135bec",
+    primary: "#135bec",
+    primaryLight: "#3d7bf0",
+    success: "#34d399",
+    successBg: "rgba(52, 211, 153, 0.1)",
+    warning: "#f59e0b",
+    error: "#ef4444",
+    purple: "#c084fc",
+    backgroundRoot: "#101622",
+    backgroundDefault: "rgba(23, 29, 41, 0.6)",
+    backgroundSecondary: "rgba(23, 29, 41, 0.8)",
+    backgroundTertiary: "rgba(16, 22, 34, 0.9)",
+    glassBorder: "rgba(255, 255, 255, 0.08)",
+    glassHighlight: "rgba(255, 255, 255, 0.1)",
+    orb1: "#135bec",
+    orb2: "#2a3b55",
+    orb3: "#1a2333",
   },
 };
 
@@ -45,61 +70,73 @@ export const Spacing = {
 export const BorderRadius = {
   xs: 8,
   sm: 12,
-  md: 18,
-  lg: 24,
-  xl: 30,
-  "2xl": 40,
+  md: 16,
+  lg: 20,
+  xl: 24,
+  "2xl": 32,
   "3xl": 50,
   full: 9999,
 };
 
 export const Typography = {
+  display: {
+    fontSize: 48,
+    fontWeight: "900" as const,
+    letterSpacing: -1.5,
+  },
+  revenue: {
+    fontSize: 40,
+    fontWeight: "900" as const,
+    letterSpacing: -1.2,
+  },
   h1: {
     fontSize: 32,
-    lineHeight: 40,
-    fontWeight: "700" as const,
+    fontWeight: "800" as const,
+    letterSpacing: -0.5,
   },
   h2: {
     fontSize: 28,
-    lineHeight: 36,
     fontWeight: "700" as const,
+    letterSpacing: -0.3,
   },
   h3: {
     fontSize: 24,
-    lineHeight: 32,
     fontWeight: "600" as const,
   },
   h4: {
     fontSize: 20,
-    lineHeight: 28,
     fontWeight: "600" as const,
   },
   body: {
     fontSize: 16,
-    lineHeight: 24,
     fontWeight: "400" as const,
   },
   small: {
     fontSize: 14,
-    lineHeight: 20,
     fontWeight: "400" as const,
+  },
+  caption: {
+    fontSize: 12,
+    fontWeight: "500" as const,
+    letterSpacing: 0.5,
+  },
+  label: {
+    fontSize: 10,
+    fontWeight: "600" as const,
+    letterSpacing: 1,
+    textTransform: "uppercase" as const,
   },
   link: {
     fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "400" as const,
+    fontWeight: "500" as const,
   },
 };
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: "system-ui",
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: "ui-serif",
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: "ui-rounded",
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: "ui-monospace",
   },
   default: {
@@ -109,10 +146,33 @@ export const Fonts = Platform.select({
     mono: "monospace",
   },
   web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    sans: "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     serif: "Georgia, 'Times New Roman', serif",
-    rounded:
-      "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
+    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });
+
+export const Shadows = {
+  glass: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 32,
+    elevation: 8,
+  },
+  glow: {
+    shadowColor: "#135bec",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  subtle: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+};
