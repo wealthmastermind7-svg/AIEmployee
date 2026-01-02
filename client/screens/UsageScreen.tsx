@@ -70,12 +70,25 @@ export default function UsageScreen() {
             </View>
           </View>
           <ThemedText type="display" style={styles.balanceText}>
-            {business?.aiCreditsRemaining?.toLocaleString()}
+            {business?.aiCreditsRemaining?.toLocaleString() || "0"}
           </ThemedText>
           <ThemedText type="caption" style={{ color: theme.textTertiary }}>
             Credits remaining for this billing cycle
           </ThemedText>
         </GlassCard>
+
+        <View style={styles.controlPanel}>
+          <ThemedText type="h4" style={styles.sectionTitle}>Usage Controls</ThemedText>
+          <GlassCard style={styles.controlCard}>
+            <View style={styles.controlRow}>
+              <View style={styles.controlInfo}>
+                <ThemedText type="body" style={{ fontWeight: '600' }}>Auto-Top-up</ThemedText>
+                <ThemedText type="caption" style={{ color: theme.textSecondary }}>Add 1,000 credits when balance < 100</ThemedText>
+              </View>
+              <Feather name="toggle-right" size={24} color={theme.primary} />
+            </View>
+          </GlassCard>
+        </View>
 
         <ThemedText type="h4" style={styles.sectionTitle}>Recent Activity</ThemedText>
         <GlassCard noPadding style={styles.logsCard}>
@@ -129,6 +142,20 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     fontSize: 48,
     lineHeight: 56,
+  },
+  controlPanel: {
+    marginBottom: Spacing.xl,
+  },
+  controlCard: {
+    padding: Spacing.lg,
+  },
+  controlRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  controlInfo: {
+    flex: 1,
   },
   sectionTitle: {
     marginBottom: Spacing.md,
