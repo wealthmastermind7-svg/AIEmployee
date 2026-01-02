@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, TextInput, Pressable } from "react-native";
+import { StyleSheet, View, TextInput, Pressable, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useNavigation } from "@react-navigation/native";
@@ -7,12 +7,15 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeInRight } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { useMutation } from "@tanstack/react-query";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { GlassCard } from "@/components/GlassCard";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { useBusiness } from "@/contexts/BusinessContext";
+import { apiRequest, queryClient } from "@/lib/query-client";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -71,6 +74,28 @@ export default function CreateAgentScreen() {
   const [openingLine, setOpeningLine] = useState("");
   const [selectedGoals, setSelectedGoals] = useState<GoalType[]>(["schedule", "collect"]);
   const [responseStyle, setResponseStyle] = useState(0.5);
+  const [goalTab, setGoalTab] = useState<"basic" | "advanced">("basic");
+  const [personality, setPersonality] = useState("");
+  const [pilotMode, setPilotMode] = useState<"off" | "suggestive" | "autopilot">("suggestive");
+  const [selectedNumber, setSelectedNumber] = useState<string | null>("existing");
+
+  const { business } = useBusiness();
+
+  const createAgentMutation = useMutation({
+    mutationFn: async (agentData: any) => {
+      const res = await apiRequest("POST", "/api/agents", agentData);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/businesses/${business?.id}/agents`] });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigation.goBack();
+    },
+    onError: (error) => {
+      Alert.alert("Error", "Failed to create agent. Please try again.");
+      console.error("Create agent error:", error);
+    },
+  });
 
   const handleFlowSelect = (selected: FlowType) => {
     Haptics.selectionAsync();
@@ -89,7 +114,22 @@ export default function CreateAgentScreen() {
     if (step < 3) {
       setStep((prev) => (prev + 1) as Step);
     } else {
-      navigation.goBack();
+      if (!agentName) {
+        Alert.alert("Required", "Please give your agent a name.");
+        setStep(1);
+        return;
+      }
+
+      createAgentMutation.mutate({
+        businessId: business?.id,
+        name: agentName,
+        type: "chat", // Defaulting to chat for now as per schema
+        direction: flow,
+        initialMessage: openingLine || "Hi there! How can I help you today?",
+        personality: personality || `A professional assistant for ${businessUnit || business?.name}. Goals: ${selectedGoals.join(", ")}. Style: ${responseStyle > 0.7 ? "Casual" : responseStyle < 0.3 ? "Formal" : "Balanced"}`,
+        isActive: true,
+        pilotMode: pilotMode,
+      });
     }
   };
 
@@ -230,44 +270,109 @@ export default function CreateAgentScreen() {
       </View>
 
       <View style={styles.tabSelector}>
-        <Pressable style={[styles.tab, styles.tabActive]}>
-          <ThemedText type="body" style={{ fontWeight: "600" }}>Basic</ThemedText>
+        <Pressable 
+          onPress={() => {
+            Haptics.selectionAsync();
+            setGoalTab("basic");
+          }}
+          style={[styles.tab, goalTab === "basic" && styles.tabActive]}
+        >
+          <ThemedText type="body" style={{ fontWeight: "600", color: goalTab === "basic" ? theme.text : theme.textSecondary }}>Basic</ThemedText>
         </Pressable>
-        <Pressable style={styles.tab}>
-          <ThemedText type="body" style={{ color: theme.textSecondary }}>Advanced</ThemedText>
+        <Pressable 
+          onPress={() => {
+            Haptics.selectionAsync();
+            setGoalTab("advanced");
+          }}
+          style={[styles.tab, goalTab === "advanced" && styles.tabActive]}
+        >
+          <ThemedText type="body" style={{ color: goalTab === "advanced" ? theme.text : theme.textSecondary, fontWeight: goalTab === "advanced" ? "600" : "400" }}>Advanced</ThemedText>
         </Pressable>
       </View>
 
-      <View style={styles.goalsGrid}>
-        {GOALS.map((goal, index) => (
-          <Animated.View key={goal.id} entering={FadeIn.delay(index * 100)}>
-            <Pressable
-              onPress={() => handleGoalToggle(goal.id)}
-              style={[
-                styles.goalCard,
-                selectedGoals.includes(goal.id) && styles.goalCardActive,
-              ]}
-            >
-              <View style={styles.goalHeader}>
-                <View style={[styles.goalIcon, { backgroundColor: `${goal.color}20` }]}>
-                  <Feather name={goal.icon} size={22} color={goal.color} />
+      {goalTab === "basic" ? (
+        <View style={styles.goalsGrid}>
+          {GOALS.map((goal, index) => (
+            <Animated.View key={goal.id} entering={FadeIn.delay(index * 100)}>
+              <Pressable
+                onPress={() => handleGoalToggle(goal.id)}
+                style={[
+                  styles.goalCard,
+                  selectedGoals.includes(goal.id) && styles.goalCardActive,
+                ]}
+              >
+                <View style={styles.goalHeader}>
+                  <View style={[styles.goalIcon, { backgroundColor: `${goal.color}20` }]}>
+                    <Feather name={goal.icon} size={22} color={goal.color} />
+                  </View>
+                  <View style={[styles.goalCheck, selectedGoals.includes(goal.id) && styles.goalCheckActive]}>
+                    {selectedGoals.includes(goal.id) ? (
+                      <Feather name="check" size={14} color={theme.text} />
+                    ) : null}
+                  </View>
                 </View>
-                <View style={[styles.goalCheck, selectedGoals.includes(goal.id) && styles.goalCheckActive]}>
-                  {selectedGoals.includes(goal.id) ? (
-                    <Feather name="check" size={14} color={theme.text} />
-                  ) : null}
-                </View>
+                <ThemedText type="body" style={{ fontWeight: "600", marginTop: Spacing.md }}>
+                  {goal.title}
+                </ThemedText>
+                <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: 4 }}>
+                  {goal.description}
+                </ThemedText>
+              </Pressable>
+            </Animated.View>
+          ))}
+        </View>
+      ) : (
+        <Animated.View entering={FadeIn} style={styles.advancedGoals}>
+          <GlassCard style={styles.formCard}>
+            <View style={styles.inputGroup}>
+              <ThemedText type="body" style={{ fontWeight: "500", marginBottom: Spacing.sm }}>
+                Custom Personality
+              </ThemedText>
+              <View style={[styles.inputContainer, styles.textAreaContainer]}>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="e.g., You are a helpful sales assistant that is very energetic..."
+                  placeholderTextColor={theme.textTertiary}
+                  value={personality}
+                  onChangeText={setPersonality}
+                  multiline
+                />
               </View>
-              <ThemedText type="body" style={{ fontWeight: "600", marginTop: Spacing.md }}>
-                {goal.title}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <ThemedText type="body" style={{ fontWeight: "500", marginBottom: Spacing.sm }}>
+                Pilot Mode
               </ThemedText>
-              <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: 4 }}>
-                {goal.description}
-              </ThemedText>
-            </Pressable>
-          </Animated.View>
-        ))}
-      </View>
+              <View style={styles.flowSelector}>
+                {(["off", "suggestive", "autopilot"] as const).map((mode) => (
+                  <Pressable
+                    key={mode}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setPilotMode(mode);
+                    }}
+                    style={[
+                      styles.flowOption,
+                      pilotMode === mode && styles.flowOptionActive,
+                    ]}
+                  >
+                    <ThemedText
+                      type="body"
+                      style={[
+                        styles.flowText,
+                        pilotMode === mode && styles.flowTextActive,
+                      ]}
+                    >
+                      {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                    </ThemedText>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          </GlassCard>
+        </Animated.View>
+      )}
 
       <GlassCard style={styles.sliderCard}>
         <View style={styles.sliderHeader}>
@@ -310,8 +415,11 @@ export default function CreateAgentScreen() {
       </View>
 
       <GlassCard
-        onPress={() => Haptics.selectionAsync()}
-        style={[styles.numberOption, styles.numberOptionActive]}
+        onPress={() => {
+          Haptics.selectionAsync();
+          setSelectedNumber("existing");
+        }}
+        style={[styles.numberOption, selectedNumber === "existing" && styles.numberOptionActive]}
       >
         <View style={[styles.numberIcon, { backgroundColor: `${theme.primary}20` }]}>
           <Feather name="smartphone" size={22} color={theme.primary} />
@@ -322,14 +430,17 @@ export default function CreateAgentScreen() {
             Select from your inventory
           </ThemedText>
         </View>
-        <View style={styles.radioOuter}>
-          <View style={styles.radioInner} />
+        <View style={[styles.radioOuter, selectedNumber !== "existing" && { borderColor: theme.textTertiary }]}>
+          {selectedNumber === "existing" && <View style={styles.radioInner} />}
         </View>
       </GlassCard>
 
       <GlassCard
-        onPress={() => Haptics.selectionAsync()}
-        style={styles.numberOption}
+        onPress={() => {
+          Haptics.selectionAsync();
+          setSelectedNumber("new");
+        }}
+        style={[styles.numberOption, selectedNumber === "new" && styles.numberOptionActive]}
       >
         <View style={[styles.numberIcon, { backgroundColor: "rgba(255, 255, 255, 0.05)" }]}>
           <Feather name="phone-call" size={22} color={theme.textSecondary} />
@@ -340,7 +451,9 @@ export default function CreateAgentScreen() {
             Provision a dedicated line
           </ThemedText>
         </View>
-        <View style={[styles.radioOuter, { borderColor: theme.textTertiary }]} />
+        <View style={[styles.radioOuter, selectedNumber !== "new" && { borderColor: theme.textTertiary }]}>
+          {selectedNumber === "new" && <View style={styles.radioInner} />}
+        </View>
       </GlassCard>
 
       <GlassCard style={styles.confirmCard}>
@@ -524,6 +637,10 @@ const styles = StyleSheet.create({
   goalsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    gap: Spacing.md,
+    marginBottom: Spacing.xl,
+  },
+  advancedGoals: {
     gap: Spacing.md,
     marginBottom: Spacing.xl,
   },
