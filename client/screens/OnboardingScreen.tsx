@@ -8,6 +8,7 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -59,7 +60,8 @@ export default function OnboardingScreen() {
     if (currentPage < 2) {
       const nextPage = currentPage + 1;
       scrollRef.current?.scrollTo({ x: nextPage * SCREEN_WIDTH, animated: true });
-      handlePageChange(nextPage);
+      setCurrentPage(nextPage);
+      pageOffset.value = withTiming(nextPage, { duration: 300 });
     } else {
       handleComplete();
     }
@@ -73,13 +75,17 @@ export default function OnboardingScreen() {
     if (isCreating) return;
     setIsCreating(true);
     try {
+      console.log("Starting business creation...");
       const name = businessName.trim() || "My Business";
       await createBusiness(name);
+      console.log("Business created successfully");
+      
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } catch (error) {
       console.error("Failed to create business:", error);
+      Alert.alert("Error", "Failed to create your workspace. Please try again.");
     } finally {
       setIsCreating(false);
     }
