@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { StyleSheet, View, ScrollView, TextInput, Pressable } from "react-native";
+import { StyleSheet, View, TextInput, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
@@ -354,7 +355,7 @@ export default function CreateAgentScreen() {
   return (
     <View style={styles.container}>
       <AnimatedBackground />
-      <ScrollView
+      <KeyboardAwareScrollViewCompat
         style={styles.scrollView}
         contentContainerStyle={[
           styles.content,
@@ -380,7 +381,7 @@ export default function CreateAgentScreen() {
         {step === 1 && renderStep1()}
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
-      </ScrollView>
+      </KeyboardAwareScrollViewCompat>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}>
         {step === 3 ? (
