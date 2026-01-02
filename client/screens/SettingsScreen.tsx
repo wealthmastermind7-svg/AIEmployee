@@ -1,14 +1,23 @@
 import React, { useState } from "react";
-import { StyleSheet, View, ScrollView, Pressable, Switch } from "react-native";
+import { StyleSheet, View, ScrollView, Pressable, Switch, Alert, Linking, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { useMutation } from "@tanstack/react-query";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { GlassCard } from "@/components/GlassCard";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { useBusiness } from "@/contexts/BusinessContext";
+import { apiRequest, queryClient } from "@/lib/query-client";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { BottomTabParamList } from "@/navigation/MainTabNavigator";
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList & BottomTabParamList>;
 
 interface SettingItemProps {
   icon: keyof typeof Feather.glyphMap;
@@ -83,10 +92,45 @@ function SettingItem({
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
+  const navigation = useNavigation<NavigationProp>();
+  const { business, logout } = useBusiness();
   const theme = Colors.dark;
 
-  const [pushNotifications, setPushNotifications] = useState(true);
+  const [pushNotifications, setPushNotifications] = useState(business?.notificationsEnabled ?? true);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
+
+  const updateBusinessMutation = useMutation({
+    mutationFn: async (updates: Partial<typeof business>) => {
+      const res = await apiRequest("PATCH", `/api/businesses/${business?.id}`, updates);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/me"] });
+    },
+  });
+
+  const handleToggleNotifications = (value: boolean) => {
+    setPushNotifications(value);
+    updateBusinessMutation.mutate({ notificationsEnabled: value });
+  };
+
+  const handleLogout = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Alert.alert(
+      "Log Out",
+      "Are you sure you want to log out?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Log Out", style: "destructive", onPress: logout },
+      ]
+    );
+  };
+
+  const openUrl = (url: string) => {
+    Linking.openURL(url).catch(() => {
+      Alert.alert("Error", "Could not open link");
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -111,7 +155,10 @@ export default function SettingsScreen() {
 
         <Animated.View entering={FadeIn.delay(100)}>
           <GlassCard style={styles.profileCard}>
-            <View style={styles.profileContent}>
+            <Pressable 
+              onPress={() => navigation.navigate("Main", { screen: "Agents" } as any)}
+              style={styles.profileContent}
+            >
               <View style={styles.profileAvatar}>
                 <Feather name="user" size={28} color={theme.text} />
                 <View style={styles.editBadge}>
@@ -119,18 +166,18 @@ export default function SettingsScreen() {
                 </View>
               </View>
               <View style={styles.profileInfo}>
-                <ThemedText type="h4">Sarah Connor</ThemedText>
+                <ThemedText type="h4">{business?.name || "Business Owner"}</ThemedText>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  Admin • Tech Solutions Inc.
+                  Admin • {business?.name || "Your Company"}
                 </ThemedText>
                 <View style={styles.planBadge}>
                   <ThemedText type="label" style={{ color: theme.primary }}>
-                    PRO PLAN
+                    {business?.subscriptionTier?.toUpperCase() || "FREE"} PLAN
                   </ThemedText>
                 </View>
               </View>
               <Feather name="chevron-right" size={20} color={theme.textTertiary} />
-            </View>
+            </Pressable>
           </GlassCard>
         </Animated.View>
 
@@ -143,14 +190,16 @@ export default function SettingsScreen() {
               icon="briefcase"
               iconColor={theme.primary}
               title="Business Profile"
-              subtitle="Tech Solutions Inc. • SaaS"
+              subtitle={business?.name || "Setup your business"}
+              onPress={() => navigation.navigate("Main", { screen: "Dashboard" } as any)}
             />
             <View style={styles.divider} />
             <SettingItem
               icon="globe"
               iconColor="#8b5cf6"
-              title="Language & R..."
+              title="Language & Region"
               value="English (US)"
+              onPress={() => Alert.alert("Coming Soon", "Multi-language support is in development.")}
             />
           </GlassCard>
         </Animated.View>
@@ -165,13 +214,15 @@ export default function SettingsScreen() {
               iconColor={theme.success}
               title="Response Tone"
               value="Professional"
+              onPress={() => navigation.navigate("Main", { screen: "Agents" } as any)}
             />
             <View style={styles.divider} />
             <SettingItem
               icon="clock"
               iconColor="#f472b6"
               title="Active Hours"
-              subtitle="09:00 AM - 06:00 PM"
+              subtitle="24/7 Enabled"
+              onPress={() => navigation.navigate("Main", { screen: "Agents" } as any)}
             />
           </GlassCard>
         </Animated.View>
@@ -188,7 +239,7 @@ export default function SettingsScreen() {
               hasArrow={false}
               hasSwitch
               switchValue={pushNotifications}
-              onSwitchChange={setPushNotifications}
+              onSwitchChange={handleToggleNotifications}
             />
             <View style={styles.divider} />
             <SettingItem
@@ -208,14 +259,15 @@ export default function SettingsScreen() {
             <SettingItem
               icon="lock"
               iconColor={theme.textSecondary}
-              title="Change Password"
+              title="Security & Privacy"
+              onPress={() => Alert.alert("Security", "Your account is protected with Replit Auth.")}
             />
           </GlassCard>
         </Animated.View>
 
         <Animated.View entering={FadeIn.delay(600)}>
           <Pressable
-            onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
+            onPress={handleLogout}
             style={styles.logoutButton}
           >
             <Feather name="log-out" size={18} color={theme.error} />
@@ -227,18 +279,22 @@ export default function SettingsScreen() {
 
         <View style={styles.footer}>
           <ThemedText type="caption" style={{ color: theme.textTertiary, textAlign: "center" }}>
-            AI Employee v2.4.0 (Build 8902)
+            AI Employee v1.0.0
           </ThemedText>
           <View style={styles.footerLinks}>
-            <ThemedText type="caption" style={{ color: theme.primary }}>
-              Privacy Policy
-            </ThemedText>
+            <Pressable onPress={() => openUrl("https://replit.com/privacy")}>
+              <ThemedText type="caption" style={{ color: theme.primary }}>
+                Privacy Policy
+              </ThemedText>
+            </Pressable>
             <ThemedText type="caption" style={{ color: theme.textTertiary }}>
               {" • "}
             </ThemedText>
-            <ThemedText type="caption" style={{ color: theme.primary }}>
-              Terms of Service
-            </ThemedText>
+            <Pressable onPress={() => openUrl("https://replit.com/terms")}>
+              <ThemedText type="caption" style={{ color: theme.primary }}>
+                Terms of Service
+              </ThemedText>
+            </Pressable>
           </View>
         </View>
       </ScrollView>
