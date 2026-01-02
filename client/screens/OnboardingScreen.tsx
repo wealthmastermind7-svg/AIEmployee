@@ -168,6 +168,9 @@ export default function OnboardingScreen() {
               placeholderTextColor={theme.textTertiary}
               value={businessName}
               onChangeText={setBusinessName}
+              autoCorrect={false}
+              spellCheck={false}
+              autoCapitalize="words"
             />
           </View>
         </View>
