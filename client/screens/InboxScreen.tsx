@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, ScrollView, Pressable, FlatList } from "react-native";
+import { StyleSheet, View, ScrollView, Pressable, FlatList, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
@@ -12,86 +12,96 @@ import Animated, {
   FadeIn,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { useQuery } from "@tanstack/react-query";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { GlassCard } from "@/components/GlassCard";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { useBusiness } from "@/contexts/BusinessContext";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-type FilterType = "all" | "ai_pending" | "human_needed" | "resolved";
+type FilterType = "all" | "active" | "transferred" | "resolved";
+
+interface ApiConversation {
+  id: string;
+  businessId: string;
+  agentId: string | null;
+  channel: string;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  status: string;
+  sentiment: string | null;
+  summary: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface Conversation {
   id: string;
   name: string;
   avatar?: string;
-  channel: "phone" | "sms" | "chat" | "instagram" | "email";
+  channel: "phone" | "sms" | "chat" | "instagram" | "email" | "webchat" | "whatsapp" | "facebook";
   lastMessage: string;
   time: string;
-  status: "ai_drafting" | "escalated" | "resolved" | "ai_replied";
+  status: "active" | "resolved" | "transferred";
   isToday: boolean;
   unread?: boolean;
 }
 
-const CONVERSATIONS: Conversation[] = [
-  {
-    id: "1",
-    name: "Sarah Jenkins",
-    channel: "chat",
-    lastMessage: "AI Drafting: Can I schedule a dem...",
-    time: "2m",
-    status: "ai_drafting",
-    isToday: true,
-    unread: true,
-  },
-  {
-    id: "2",
-    name: "Tech Corp Support",
-    channel: "email",
-    lastMessage: "Escalated: Payment gateway integr...",
-    time: "15m",
-    status: "escalated",
-    isToday: true,
-    unread: true,
-  },
-  {
-    id: "3",
-    name: "Mike Ross",
-    channel: "phone",
-    lastMessage: "Resolved: Thanks for the quick re...",
-    time: "1h",
-    status: "resolved",
-    isToday: true,
-  },
-  {
-    id: "4",
-    name: "Amanda Lee",
-    channel: "sms",
-    lastMessage: "Re: Invoice #3302 - Confirmation of p...",
-    time: "Yesterday",
-    status: "ai_replied",
-    isToday: false,
-  },
-  {
-    id: "5",
-    name: "David Chen",
-    channel: "instagram",
-    lastMessage: "AI Replied: Sure, I can help wi...",
-    time: "Yesterday",
-    status: "ai_replied",
-    isToday: false,
-  },
-];
-
 const FILTERS: { key: FilterType; label: string; color?: string }[] = [
   { key: "all", label: "All" },
-  { key: "ai_pending", label: "AI Pending", color: Colors.dark.warning },
-  { key: "human_needed", label: "Human Needed", color: Colors.dark.error },
+  { key: "active", label: "Active", color: Colors.dark.primary },
+  { key: "transferred", label: "Transferred", color: Colors.dark.warning },
   { key: "resolved", label: "Resolved", color: Colors.dark.success },
 ];
+
+function formatTimeAgo(dateString: string): string {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m`;
+  if (diffHours < 24) return `${diffHours}h`;
+  if (diffDays === 1) return "Yesterday";
+  return `${diffDays}d ago`;
+}
+
+function isToday(dateString: string): boolean {
+  const date = new Date(dateString);
+  const today = new Date();
+  return date.toDateString() === today.toDateString();
+}
+
+function normalizeStatus(status: string): Conversation["status"] {
+  const validStatuses: Conversation["status"][] = ["active", "resolved", "transferred"];
+  if (validStatuses.includes(status as Conversation["status"])) {
+    return status as Conversation["status"];
+  }
+  return "active";
+}
+
+function mapApiConversation(conv: ApiConversation): Conversation {
+  const normalizedStatus = normalizeStatus(conv.status);
+  return {
+    id: conv.id,
+    name: conv.contactName || conv.contactEmail || conv.contactPhone || "Unknown Contact",
+    channel: (conv.channel as Conversation["channel"]) || "webchat",
+    lastMessage: conv.summary || "No messages yet",
+    time: formatTimeAgo(conv.updatedAt),
+    status: normalizedStatus,
+    isToday: isToday(conv.updatedAt),
+    unread: normalizedStatus === "active",
+  };
+}
 
 const getChannelIcon = (channel: Conversation["channel"]): keyof typeof Feather.glyphMap => {
   switch (channel) {
@@ -100,6 +110,7 @@ const getChannelIcon = (channel: Conversation["channel"]): keyof typeof Feather.
     case "sms":
       return "message-circle";
     case "chat":
+    case "webchat":
       return "message-square";
     case "instagram":
       return "instagram";
@@ -112,14 +123,12 @@ const getChannelIcon = (channel: Conversation["channel"]): keyof typeof Feather.
 
 const getStatusColor = (status: Conversation["status"]) => {
   switch (status) {
-    case "ai_drafting":
+    case "active":
       return Colors.dark.primary;
-    case "escalated":
-      return Colors.dark.error;
+    case "transferred":
+      return Colors.dark.warning;
     case "resolved":
       return Colors.dark.success;
-    case "ai_replied":
-      return Colors.dark.primary;
     default:
       return Colors.dark.textSecondary;
   }
@@ -131,6 +140,14 @@ export default function InboxScreen() {
   const navigation = useNavigation<NavigationProp>();
   const theme = Colors.dark;
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const { business } = useBusiness();
+
+  const { data: apiConversations = [], isLoading } = useQuery<ApiConversation[]>({
+    queryKey: ["/api/businesses", business?.id, "conversations"],
+    enabled: !!business?.id,
+  });
+
+  const conversations = apiConversations.map(mapApiConversation);
 
   const fabScale = useSharedValue(1);
   const fabStyle = useAnimatedStyle(() => ({
@@ -154,10 +171,10 @@ export default function InboxScreen() {
     setActiveFilter(filter);
   };
 
-  const filteredConversations = CONVERSATIONS.filter((conv) => {
+  const filteredConversations = conversations.filter((conv) => {
     if (activeFilter === "all") return true;
-    if (activeFilter === "ai_pending") return conv.status === "ai_drafting";
-    if (activeFilter === "human_needed") return conv.status === "escalated";
+    if (activeFilter === "active") return conv.status === "active";
+    if (activeFilter === "transferred") return conv.status === "transferred";
     if (activeFilter === "resolved") return conv.status === "resolved";
     return true;
   });
@@ -171,7 +188,7 @@ export default function InboxScreen() {
         onPress={() => handleConversationPress(item)}
         style={[
           styles.conversationCard,
-          item.status === "escalated" && styles.escalatedCard,
+          item.status === "transferred" && styles.transferredCard,
         ]}
       >
         <View style={styles.conversationContent}>
@@ -179,7 +196,7 @@ export default function InboxScreen() {
             <View style={[styles.avatar, { backgroundColor: `${theme.primary}20` }]}>
               <Feather name={getChannelIcon(item.channel)} size={18} color={theme.primary} />
             </View>
-            {item.status === "ai_drafting" || item.status === "ai_replied" ? (
+            {item.status === "active" ? (
               <View style={[styles.statusBadge, { backgroundColor: theme.primary }]}>
                 <Feather name="cpu" size={8} color={theme.text} />
               </View>
@@ -197,8 +214,10 @@ export default function InboxScreen() {
             <View style={styles.messageRow}>
               {item.status === "resolved" ? (
                 <Feather name="check-circle" size={12} color={theme.success} style={{ marginRight: 4 }} />
-              ) : item.status === "ai_drafting" || item.status === "ai_replied" ? (
+              ) : item.status === "active" ? (
                 <Feather name="zap" size={12} color={theme.primary} style={{ marginRight: 4 }} />
+              ) : item.status === "transferred" ? (
+                <Feather name="user" size={12} color={theme.warning} style={{ marginRight: 4 }} />
               ) : null}
               <ThemedText
                 type="small"
@@ -240,7 +259,7 @@ export default function InboxScreen() {
         <View style={styles.titleSection}>
           <ThemedText type="h1">Inbox</ThemedText>
           <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: 4 }}>
-            3 Waiting for Review
+            {conversations.filter(c => c.status !== "resolved").length} Open Conversations
           </ThemedText>
         </View>
 
@@ -277,23 +296,44 @@ export default function InboxScreen() {
           ))}
         </ScrollView>
 
-        {todayConversations.length > 0 ? (
-          <>
-            <ThemedText type="label" style={styles.sectionLabel}>
-              Today
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={theme.primary} />
+            <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.md }}>
+              Loading conversations...
             </ThemedText>
-            {todayConversations.map((item, index) => renderConversation({ item, index }))}
-          </>
-        ) : null}
+          </View>
+        ) : filteredConversations.length === 0 ? (
+          <GlassCard style={styles.emptyCard}>
+            <Feather name="inbox" size={48} color={theme.textTertiary} />
+            <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.md, textAlign: "center" }}>
+              No conversations yet
+            </ThemedText>
+            <ThemedText type="small" style={{ color: theme.textTertiary, marginTop: Spacing.xs, textAlign: "center" }}>
+              Messages from your customers will appear here
+            </ThemedText>
+          </GlassCard>
+        ) : (
+          <>
+            {todayConversations.length > 0 ? (
+              <>
+                <ThemedText type="label" style={styles.sectionLabel}>
+                  Today
+                </ThemedText>
+                {todayConversations.map((item, index) => renderConversation({ item, index }))}
+              </>
+            ) : null}
 
-        {yesterdayConversations.length > 0 ? (
-          <>
-            <ThemedText type="label" style={styles.sectionLabel}>
-              Yesterday
-            </ThemedText>
-            {yesterdayConversations.map((item, index) => renderConversation({ item, index: index + todayConversations.length }))}
+            {yesterdayConversations.length > 0 ? (
+              <>
+                <ThemedText type="label" style={styles.sectionLabel}>
+                  Earlier
+                </ThemedText>
+                {yesterdayConversations.map((item, index) => renderConversation({ item, index: index + todayConversations.length }))}
+              </>
+            ) : null}
           </>
-        ) : null}
+        )}
       </ScrollView>
 
       <AnimatedPressable
@@ -384,9 +424,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     padding: Spacing.lg,
   },
-  escalatedCard: {
+  transferredCard: {
     borderLeftWidth: 3,
-    borderLeftColor: Colors.dark.error,
+    borderLeftColor: Colors.dark.warning,
   },
   conversationContent: {
     flexDirection: "row",
@@ -442,5 +482,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 8,
+  },
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing["2xl"],
+  },
+  emptyCard: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing["2xl"],
   },
 });

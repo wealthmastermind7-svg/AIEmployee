@@ -6,6 +6,8 @@ import {
   Dimensions,
   Platform,
   ScrollView,
+  TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -18,25 +20,23 @@ import Animated, {
   Extrapolation,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { GlassCard } from "@/components/GlassCard";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors, Spacing, BorderRadius, Shadows } from "@/constants/theme";
+import { useBusiness } from "@/contexts/BusinessContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const ONBOARDING_KEY = "@ai_employee_onboarding_complete";
 
-interface OnboardingScreenProps {
-  onComplete: () => void;
-}
-
-export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
+export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const theme = Colors.dark;
   const scrollRef = useRef<ScrollView>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const pageOffset = useSharedValue(0);
+  const [businessName, setBusinessName] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  const { createBusiness } = useBusiness();
 
   const handlePageChange = (position: number) => {
     setCurrentPage(position);
@@ -69,14 +69,18 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   };
 
   const handleComplete = async () => {
+    if (isCreating) return;
+    setIsCreating(true);
     try {
-      await AsyncStorage.setItem(ONBOARDING_KEY, "true");
+      const name = businessName.trim() || "My Business";
+      await createBusiness(name);
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-      onComplete();
     } catch (error) {
-      onComplete();
+      console.error("Failed to create business:", error);
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -335,14 +339,6 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   );
 }
 
-export async function checkOnboardingComplete(): Promise<boolean> {
-  try {
-    const value = await AsyncStorage.getItem(ONBOARDING_KEY);
-    return value === "true";
-  } catch {
-    return false;
-  }
-}
 
 const styles = StyleSheet.create({
   container: {

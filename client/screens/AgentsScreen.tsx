@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, ScrollView, Pressable, Image } from "react-native";
+import { StyleSheet, View, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
@@ -12,12 +12,14 @@ import Animated, {
   FadeIn,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { useQuery } from "@tanstack/react-query";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { GlassCard } from "@/components/GlassCard";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { useBusiness } from "@/contexts/BusinessContext";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -27,35 +29,11 @@ interface Agent {
   id: string;
   name: string;
   type: "voice" | "chat" | "sms";
-  status: "online" | "paused";
-  stats: string;
-  metric?: string;
+  isActive: boolean;
+  direction: string;
+  pilotMode: string;
+  createdAt: string;
 }
-
-const AGENTS: Agent[] = [
-  {
-    id: "1",
-    name: "Support Voice Bot",
-    type: "voice",
-    status: "online",
-    stats: "120 calls handled today",
-  },
-  {
-    id: "2",
-    name: "Sales SMS Lead",
-    type: "sms",
-    status: "paused",
-    stats: "45 threads",
-    metric: "92% response rate",
-  },
-  {
-    id: "3",
-    name: "Website Live Chat",
-    type: "chat",
-    status: "online",
-    stats: "214 visitors engaged",
-  },
-];
 
 const FILTERS: { key: AgentType; label: string }[] = [
   { key: "all", label: "All Agents" },
@@ -64,7 +42,7 @@ const FILTERS: { key: AgentType; label: string }[] = [
   { key: "sms", label: "SMS" },
 ];
 
-const getAgentIcon = (type: Agent["type"]): keyof typeof Feather.glyphMap => {
+const getAgentIcon = (type: string): keyof typeof Feather.glyphMap => {
   switch (type) {
     case "voice":
       return "phone";
@@ -83,6 +61,12 @@ export default function AgentsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const theme = Colors.dark;
   const [activeFilter, setActiveFilter] = useState<AgentType>("all");
+  const { business } = useBusiness();
+
+  const { data: agents = [], isLoading } = useQuery<Agent[]>({
+    queryKey: ["/api/businesses", business?.id, "agents"],
+    enabled: !!business?.id,
+  });
 
   const handleFilterPress = (filter: AgentType) => {
     Haptics.selectionAsync();
@@ -99,13 +83,13 @@ export default function AgentsScreen() {
     navigation.navigate("CreateAgent");
   };
 
-  const filteredAgents = AGENTS.filter((agent) => {
+  const filteredAgents = agents.filter((agent) => {
     if (activeFilter === "all") return true;
     return agent.type === activeFilter;
   });
 
-  const onlineCount = AGENTS.filter((a) => a.status === "online").length;
-  const pausedCount = AGENTS.filter((a) => a.status === "paused").length;
+  const activeCount = agents.filter((a) => a.isActive).length;
+  const pausedCount = agents.filter((a) => !a.isActive).length;
 
   return (
     <View style={styles.container}>
@@ -146,7 +130,7 @@ export default function AgentsScreen() {
             <View style={styles.statusItem}>
               <View style={[styles.statusDot, { backgroundColor: theme.success }]} />
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                {onlineCount} Active
+                {activeCount} Active
               </ThemedText>
             </View>
             <ThemedText type="small" style={{ color: theme.textTertiary }}>
@@ -186,6 +170,25 @@ export default function AgentsScreen() {
           ))}
         </ScrollView>
 
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={theme.primary} />
+            <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.md }}>
+              Loading agents...
+            </ThemedText>
+          </View>
+        ) : filteredAgents.length === 0 ? (
+          <GlassCard style={styles.emptyCard}>
+            <Feather name="cpu" size={48} color={theme.textTertiary} />
+            <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.md, textAlign: "center" }}>
+              No agents yet
+            </ThemedText>
+            <ThemedText type="small" style={{ color: theme.textTertiary, marginTop: Spacing.xs, textAlign: "center" }}>
+              Create your first AI agent to get started
+            </ThemedText>
+          </GlassCard>
+        ) : null}
+
         {filteredAgents.map((agent, index) => (
           <Animated.View key={agent.id} entering={FadeIn.delay(index * 100)}>
             <GlassCard
@@ -204,7 +207,7 @@ export default function AgentsScreen() {
                           styles.statusIndicator,
                           {
                             backgroundColor:
-                              agent.status === "online" ? theme.success : theme.warning,
+                              agent.isActive ? theme.success : theme.warning,
                           },
                         ]}
                       />
@@ -212,18 +215,18 @@ export default function AgentsScreen() {
                         type="label"
                         style={{
                           color:
-                            agent.status === "online" ? theme.success : theme.warning,
+                            agent.isActive ? theme.success : theme.warning,
                         }}
                       >
-                        {agent.status.toUpperCase()}
+                        {agent.isActive ? "ACTIVE" : "PAUSED"}
                       </ThemedText>
                     </View>
                     <ThemedText type="h4" style={styles.agentName}>
                       {agent.name}
                     </ThemedText>
                     <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                      {agent.stats}
-                      {agent.metric ? ` • ${agent.metric}` : ""}
+                      {agent.type.charAt(0).toUpperCase() + agent.type.slice(1)} Agent
+                      {agent.direction ? ` - ${agent.direction}` : ""}
                     </ThemedText>
                   </View>
                 </View>
@@ -241,7 +244,7 @@ export default function AgentsScreen() {
                   }}
                 >
                   <ThemedText type="small" style={{ fontWeight: "600" }}>
-                    {agent.status === "online" ? "Manage" : "Resume"}
+                    {agent.isActive ? "Manage" : "Resume"}
                   </ThemedText>
                 </Pressable>
                 <Pressable
@@ -421,5 +424,16 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
     borderRadius: BorderRadius.xl,
     marginTop: Spacing.md,
+  },
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing["2xl"],
+  },
+  emptyCard: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing["2xl"],
+    marginBottom: Spacing.lg,
   },
 });

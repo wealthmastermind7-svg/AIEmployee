@@ -30,7 +30,13 @@ Preferred communication style: Simple, everyday language.
 - **Database**: PostgreSQL with Drizzle ORM
 - **Schema Location**: `shared/schema.ts` (shared between client and server)
 - **Migrations**: Generated in `./migrations` directory via drizzle-kit
-- **Current Storage**: MemStorage class for in-memory data (database integration pending)
+- **Current Storage**: MemStorage class for in-memory data
+
+### API Integration Status
+- **AgentsScreen**: Fetches agents from `/api/businesses/:id/agents`, shows loading/empty states
+- **InboxScreen**: Fetches conversations from `/api/businesses/:id/conversations`, supports Active/Transferred/Resolved filters
+- **DashboardScreen**: Fetches business stats from `/api/businesses/:id/stats`
+- **BusinessContext**: Manages current business state with AsyncStorage persistence
 
 ### Project Structure
 - `client/` - React Native application code

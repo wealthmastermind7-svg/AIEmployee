@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View, ScrollView, Pressable, Image } from "react-native";
+import { StyleSheet, View, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
@@ -9,6 +9,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { useQuery } from "@tanstack/react-query";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { GlassCard } from "@/components/GlassCard";
 import { CircularProgress } from "@/components/CircularProgress";
@@ -16,13 +17,28 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { StatCard } from "@/components/StatCard";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { useBusiness } from "@/contexts/BusinessContext";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+interface DashboardStats {
+  aiCreditsRemaining: number;
+  subscriptionTier: string;
+  totalAgents: number;
+  totalConversations: number;
+  activeConversations: number;
+}
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const theme = Colors.dark;
+  const { business } = useBusiness();
+
+  const { data: stats, isLoading } = useQuery<DashboardStats>({
+    queryKey: ["/api/businesses", business?.id, "stats"],
+    enabled: !!business?.id,
+  });
 
   const notificationScale = useSharedValue(1);
   const notificationStyle = useAnimatedStyle(() => ({
@@ -35,6 +51,9 @@ export default function DashboardScreen() {
       notificationScale.value = withSpring(1);
     });
   };
+
+  const creditsUsed = stats ? 5000 - stats.aiCreditsRemaining : 0;
+  const creditsPercentage = stats ? Math.round((creditsUsed / 5000) * 100) : 0;
 
   return (
     <View style={styles.container}>
@@ -72,7 +91,7 @@ export default function DashboardScreen() {
 
         <View style={styles.greeting}>
           <ThemedText type="body" style={{ color: theme.textSecondary }}>
-            Good Evening, Alex
+            {business?.name || "Your Business"}
           </ThemedText>
         </View>
 
@@ -99,8 +118,8 @@ export default function DashboardScreen() {
               <View style={[styles.pulseDot, { backgroundColor: theme.primary }]} />
             </View>
             <CircularProgress
-              value={84}
-              maxValue={100}
+              value={stats?.activeConversations || 0}
+              maxValue={Math.max(stats?.totalConversations || 1, 10)}
               size={80}
               strokeWidth={5}
               label="Active Chats"
@@ -114,17 +133,17 @@ export default function DashboardScreen() {
               </View>
             </View>
             <ThemedText type="h2" style={styles.creditsValue}>
-              4,200
+              {stats?.aiCreditsRemaining?.toLocaleString() || "0"}
             </ThemedText>
             <ThemedText type="caption" style={{ color: theme.textTertiary }}>
-              of 5,000 Credits
+              AI Credits Remaining
             </ThemedText>
             <View style={styles.usageBar}>
               <View style={styles.usageLabels}>
                 <ThemedText type="label">Usage</ThemedText>
-                <ThemedText type="label">84%</ThemedText>
+                <ThemedText type="label">{creditsPercentage}%</ThemedText>
               </View>
-              <ProgressBar value={84} maxValue={100} height={4} />
+              <ProgressBar value={creditsPercentage} maxValue={100} height={4} />
             </View>
           </GlassCard>
         </View>
@@ -146,9 +165,9 @@ export default function DashboardScreen() {
 
         <View style={styles.statsGrid}>
           <StatCard
-            title="Automations"
-            value="1,240"
-            trend={{ value: "15%", isPositive: true }}
+            title="Total Agents"
+            value={String(stats?.totalAgents || 0)}
+            trend={{ value: "Active", isPositive: true }}
           />
           <GlassCard onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)} style={styles.addCreditsCard}>
             <View style={[styles.addIconContainer, { backgroundColor: `${theme.primary}20` }]}>
