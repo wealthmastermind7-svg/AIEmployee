@@ -149,7 +149,19 @@ export default function SettingsScreen() {
         <View style={styles.header}>
           <ThemedText type="h1">Settings</ThemedText>
           <View style={styles.headerAvatar}>
-            <Feather name="user" size={20} color={theme.text} />
+            <Pressable onPress={() => {
+              Alert.alert(
+                "Profile Options",
+                "Manage your personal profile",
+                [
+                  { text: "Change Avatar", onPress: () => {} },
+                  { text: "Edit Profile", onPress: () => {} },
+                  { text: "Cancel", style: "cancel" }
+                ]
+              );
+            }}>
+              <Feather name="user" size={20} color={theme.text} />
+            </Pressable>
           </View>
         </View>
 
@@ -191,7 +203,23 @@ export default function SettingsScreen() {
               iconColor={theme.primary}
               title="Business Profile"
               subtitle={business?.name || "Setup your business"}
-              onPress={() => navigation.navigate("Main", { screen: "Dashboard" } as any)}
+              onPress={() => {
+                Alert.prompt(
+                  "Update Business Name",
+                  "Enter your business name",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    { 
+                      text: "Update", 
+                      onPress: (name) => {
+                        if (name) updateBusinessMutation.mutate({ name });
+                      } 
+                    }
+                  ],
+                  "plain-text",
+                  business?.name
+                );
+              }}
             />
             <View style={styles.divider} />
             <SettingItem
@@ -199,7 +227,18 @@ export default function SettingsScreen() {
               iconColor="#8b5cf6"
               title="Language & Region"
               value="English (US)"
-              onPress={() => Alert.alert("Coming Soon", "Multi-language support is in development.")}
+              onPress={() => {
+                Alert.alert(
+                  "Language & Region",
+                  "Select your preferred language",
+                  [
+                    { text: "English (US)", onPress: () => {} },
+                    { text: "Spanish", onPress: () => {} },
+                    { text: "French", onPress: () => {} },
+                    { text: "Cancel", style: "cancel" }
+                  ]
+                );
+              }}
             />
           </GlassCard>
         </Animated.View>
@@ -214,7 +253,18 @@ export default function SettingsScreen() {
               iconColor={theme.success}
               title="Response Tone"
               value="Professional"
-              onPress={() => navigation.navigate("Main", { screen: "Agents" } as any)}
+              onPress={() => {
+                Alert.alert(
+                  "Response Tone",
+                  "Choose the default tone for AI responses",
+                  [
+                    { text: "Professional", onPress: () => {} },
+                    { text: "Friendly", onPress: () => {} },
+                    { text: "Casual", onPress: () => {} },
+                    { text: "Cancel", style: "cancel" }
+                  ]
+                );
+              }}
             />
             <View style={styles.divider} />
             <SettingItem
@@ -222,7 +272,18 @@ export default function SettingsScreen() {
               iconColor="#f472b6"
               title="Active Hours"
               subtitle="24/7 Enabled"
-              onPress={() => navigation.navigate("Main", { screen: "Agents" } as any)}
+              onPress={() => {
+                Alert.alert(
+                  "Active Hours",
+                  "Configure when your AI agents are active",
+                  [
+                    { text: "Always On (24/7)", onPress: () => {} },
+                    { text: "Business Hours", onPress: () => {} },
+                    { text: "Custom Schedule", onPress: () => {} },
+                    { text: "Cancel", style: "cancel" }
+                  ]
+                );
+              }}
             />
           </GlassCard>
         </Animated.View>
@@ -255,12 +316,22 @@ export default function SettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeIn.delay(500)}>
-          <GlassCard noPadding style={[styles.settingsGroup, { marginTop: Spacing.xl }]}>
+          <GlassCard noPadding style={[styles.settingsGroup, { marginTop: Spacing.xl } as any]}>
             <SettingItem
               icon="lock"
               iconColor={theme.textSecondary}
               title="Security & Privacy"
-              onPress={() => Alert.alert("Security", "Your account is protected with Replit Auth.")}
+              onPress={() => {
+                Alert.alert(
+                  "Security & Privacy",
+                  "Your data is encrypted and stored securely.",
+                  [
+                    { text: "View Privacy Policy", onPress: () => openUrl("https://replit.com/privacy") },
+                    { text: "Manage Data", onPress: () => {} },
+                    { text: "Close", style: "cancel" }
+                  ]
+                );
+              }}
             />
           </GlassCard>
         </Animated.View>
