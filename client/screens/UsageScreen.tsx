@@ -83,7 +83,7 @@ export default function UsageScreen() {
             <View style={styles.controlRow}>
               <View style={styles.controlInfo}>
                 <ThemedText type="body" style={{ fontWeight: '600' }}>Auto-Top-up</ThemedText>
-                <ThemedText type="caption" style={{ color: theme.textSecondary }}>{"Add 1,000 credits when balance < 100"}</ThemedText>
+                <ThemedText type="caption" style={{ color: theme.textSecondary }}>Add 1,000 credits when balance is low</ThemedText>
               </View>
               <Feather name="toggle-right" size={24} color={theme.primary} />
             </View>

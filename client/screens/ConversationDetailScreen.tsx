@@ -154,7 +154,7 @@ export default function ConversationDetailScreen() {
                       {msg.time}
                     </ThemedText>
                   </View>
-                  <GlassCard style={[styles.messageBubble, msg.isPending && styles.pendingBubble]}>
+                  <GlassCard style={[styles.messageBubble, msg.isPending ? styles.pendingBubble : {}]}>
                     <ThemedText type="body">{msg.content}</ThemedText>
                   </GlassCard>
                   {msg.isPending ? (

@@ -188,7 +188,7 @@ export default function InboxScreen() {
         onPress={() => handleConversationPress(item)}
         style={[
           styles.conversationCard,
-          item.status === "transferred" && styles.transferredCard,
+          item.status === "transferred" ? styles.transferredCard : {},
         ]}
       >
         <View style={styles.conversationContent}>
