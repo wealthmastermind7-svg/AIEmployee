@@ -76,16 +76,27 @@ export default function OnboardingScreen() {
     setIsCreating(true);
     try {
       console.log("Starting business creation...");
-      const name = businessName.trim() || "My Business";
-      await createBusiness(name);
-      console.log("Business created successfully");
+      const name = (businessName && businessName.trim()) || "My Business";
+      
+      // Ensure business context has the necessary state
+      const business = await createBusiness(name);
+      console.log("Business created successfully:", business);
       
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create business:", error);
-      Alert.alert("Error", "Failed to create your workspace. Please try again.");
+      let errorMessage = "Failed to create your workspace. Please try again.";
+      
+      // Handle potential API response errors
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert("Error", errorMessage);
     } finally {
       setIsCreating(false);
     }
@@ -144,6 +155,22 @@ export default function OnboardingScreen() {
             <Feather name="settings" size={32} color={theme.text} />
           </View>
         </Animated.View>
+
+        <View style={styles.inputGroup}>
+          <ThemedText type="body" style={{ fontWeight: "500", marginBottom: Spacing.sm, textAlign: 'center' }}>
+            Business Name
+          </ThemedText>
+          <View style={styles.inputContainer}>
+            <Feather name="briefcase" size={18} color={theme.textSecondary} />
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., Acme Corp"
+              placeholderTextColor={theme.textTertiary}
+              value={businessName}
+              onChangeText={setBusinessName}
+            />
+          </View>
+        </View>
 
         <Animated.View entering={FadeInUp.delay(400)}>
           <ThemedText type="display" style={styles.heroTitle}>
@@ -421,6 +448,26 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.1)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  inputGroup: {
+    width: '100%',
+    marginBottom: Spacing.xl,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    paddingHorizontal: Spacing.lg,
+    height: 52,
+  },
+  input: {
+    flex: 1,
+    color: Colors.dark.text,
+    fontSize: 16,
+    marginLeft: Spacing.sm,
   },
   heroTitle: {
     textAlign: "center",
