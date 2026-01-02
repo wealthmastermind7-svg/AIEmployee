@@ -35,8 +35,7 @@ export default function OnboardingScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const pageOffset = useSharedValue(0);
-  const [businessName, setBusinessName] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
+  const [localBusinessName, setLocalBusinessName] = useState("");
   const { createBusiness } = useBusiness();
 
   const handlePageChange = (position: number) => {
@@ -76,7 +75,7 @@ export default function OnboardingScreen() {
     setIsCreating(true);
     try {
       console.log("Starting business creation...");
-      const name = (businessName && businessName.trim()) || "My Business";
+      const name = (localBusinessName && localBusinessName.trim()) || "My Business";
       
       // Ensure business context has the necessary state
       const business = await createBusiness(name);
@@ -166,8 +165,8 @@ export default function OnboardingScreen() {
               style={styles.input}
               placeholder="e.g., Acme Corp"
               placeholderTextColor={theme.textTertiary}
-              value={businessName}
-              onChangeText={setBusinessName}
+              value={localBusinessName}
+              onChangeText={setLocalBusinessName}
               autoCorrect={false}
               spellCheck={false}
               autoCapitalize="words"
