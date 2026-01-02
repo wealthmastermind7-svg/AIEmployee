@@ -15,9 +15,9 @@ import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { useBusiness } from "@/contexts/BusinessContext";
 import { apiRequest, queryClient } from "@/lib/query-client";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
-import { BottomTabParamList } from "@/navigation/MainTabNavigator";
+import { MainTabParamList } from "@/navigation/MainTabNavigator";
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList & BottomTabParamList>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList & MainTabParamList>;
 
 interface SettingItemProps {
   icon: keyof typeof Feather.glyphMap;
@@ -211,7 +211,7 @@ export default function SettingsScreen() {
                     { text: "Cancel", style: "cancel" },
                     { 
                       text: "Update", 
-                      onPress: (name) => {
+                      onPress: (name?: string) => {
                         if (name) updateBusinessMutation.mutate({ name });
                       } 
                     }
@@ -316,7 +316,7 @@ export default function SettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeIn.delay(500)}>
-          <GlassCard noPadding style={[styles.settingsGroup, { marginTop: Spacing.xl } as any]}>
+          <GlassCard noPadding style={[styles.settingsGroup, { marginTop: Spacing.xl }] as any}>
             <SettingItem
               icon="lock"
               iconColor={theme.textSecondary}
