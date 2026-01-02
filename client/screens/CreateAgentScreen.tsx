@@ -419,7 +419,7 @@ export default function CreateAgentScreen() {
           Haptics.selectionAsync();
           setSelectedNumber("existing");
         }}
-        style={[styles.numberOption, selectedNumber === "existing" && styles.numberOptionActive]}
+        style={[styles.numberOption, selectedNumber === "existing" ? styles.numberOptionActive : null] as any}
       >
         <View style={[styles.numberIcon, { backgroundColor: `${theme.primary}20` }]}>
           <Feather name="smartphone" size={22} color={theme.primary} />
@@ -440,7 +440,7 @@ export default function CreateAgentScreen() {
           Haptics.selectionAsync();
           setSelectedNumber("new");
         }}
-        style={[styles.numberOption, selectedNumber === "new" && styles.numberOptionActive]}
+        style={[styles.numberOption, selectedNumber === "new" ? styles.numberOptionActive : null] as any}
       >
         <View style={[styles.numberIcon, { backgroundColor: "rgba(255, 255, 255, 0.05)" }]}>
           <Feather name="phone-call" size={22} color={theme.textSecondary} />
