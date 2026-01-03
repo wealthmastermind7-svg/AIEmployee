@@ -416,14 +416,23 @@ export default function CreateAgentScreen() {
           <Feather name="sliders" size={18} color={theme.textSecondary} />
           <ThemedText type="body" style={{ marginLeft: Spacing.sm }}>Response Style</ThemedText>
           <ThemedText type="body" style={{ color: theme.primary, marginLeft: "auto" }}>
-            Balanced
+            {responseStyle < 0.33 ? "Formal" : responseStyle > 0.66 ? "Casual" : "Balanced"}
           </ThemedText>
         </View>
         <View style={styles.sliderContainer}>
-          <View style={styles.sliderTrack}>
+          <Pressable 
+            style={styles.sliderTrack}
+            onPress={(e) => {
+              const x = e.nativeEvent.locationX;
+              const width = e.nativeEvent.target ? 280 : 280;
+              const newValue = Math.max(0, Math.min(1, x / width));
+              setResponseStyle(newValue);
+              Haptics.selectionAsync();
+            }}
+          >
             <View style={[styles.sliderFill, { width: `${responseStyle * 100}%` }]} />
             <View style={[styles.sliderThumb, { left: `${responseStyle * 100}%` }]} />
-          </View>
+          </Pressable>
           <View style={styles.sliderLabels}>
             <ThemedText type="label">Formal</ThemedText>
             <ThemedText type="label">Casual</ThemedText>
@@ -456,7 +465,7 @@ export default function CreateAgentScreen() {
           Haptics.selectionAsync();
           setSelectedNumber("existing");
         }}
-        style={[styles.numberOption, selectedNumber === "existing" ? (styles.numberOptionActive as any) : {}]}
+        style={[styles.numberOption, selectedNumber === "existing" && styles.numberOptionActive] as any}
       >
         <View style={[styles.numberIcon, { backgroundColor: `${theme.primary}20` }]}>
           <Feather name="smartphone" size={22} color={theme.primary} />
@@ -477,7 +486,7 @@ export default function CreateAgentScreen() {
           Haptics.selectionAsync();
           setSelectedNumber("new");
         }}
-        style={[styles.numberOption, selectedNumber === "new" ? (styles.numberOptionActive as any) : {}]}
+        style={[styles.numberOption, selectedNumber === "new" && styles.numberOptionActive] as any}
       >
         <View style={[styles.numberIcon, { backgroundColor: "rgba(255, 255, 255, 0.05)" }]}>
           <Feather name="phone-call" size={22} color={theme.textSecondary} />

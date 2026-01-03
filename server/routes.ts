@@ -94,6 +94,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update business
+  app.patch("/api/businesses/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const [business] = await db.update(businesses)
+        .set(updates)
+        .where(eq(businesses.id, id))
+        .returning();
+      
+      if (!business) {
+        return res.status(404).json({ error: "Business not found" });
+      }
+      
+      res.json(business);
+    } catch (error) {
+      console.error("Error updating business:", error);
+      res.status(500).json({ error: "Failed to update business" });
+    }
+  });
+
   // Get business by owner token
   app.get("/api/me", async (req: Request, res: Response) => {
     try {
