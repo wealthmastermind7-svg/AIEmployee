@@ -69,6 +69,7 @@ export default function CreateAgentScreen() {
 
   const [step, setStep] = useState<Step>(1);
   const [agentName, setAgentName] = useState("");
+  const [agentType, setAgentType] = useState<"voice" | "chat" | "sms">("voice");
   const [businessUnit, setBusinessUnit] = useState("");
   const [flow, setFlow] = useState<FlowType>("inbound");
   const [openingLine, setOpeningLine] = useState("");
@@ -123,7 +124,7 @@ export default function CreateAgentScreen() {
       createAgentMutation.mutate({
         businessId: business?.id,
         name: agentName,
-        type: "chat", // Defaulting to chat for now as per schema
+        type: agentType,
         direction: flow,
         initialMessage: openingLine || "Hi there! How can I help you today?",
         personality: personality || `A professional assistant for ${businessUnit || business?.name}. Goals: ${selectedGoals.join(", ")}. Style: ${responseStyle > 0.7 ? "Casual" : responseStyle < 0.3 ? "Formal" : "Balanced"}`,
@@ -157,6 +158,42 @@ export default function CreateAgentScreen() {
       </View>
 
       <GlassCard style={styles.formCard}>
+        <View style={styles.inputGroup}>
+          <ThemedText type="body" style={{ fontWeight: "500", marginBottom: Spacing.sm }}>
+            Agent Type
+          </ThemedText>
+          <View style={styles.flowSelector}>
+            {(["voice", "chat", "sms"] as const).map((t) => (
+              <Pressable
+                key={t}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setAgentType(t);
+                }}
+                style={[
+                  styles.flowOption,
+                  agentType === t && styles.flowOptionActive,
+                ]}
+              >
+                <Feather 
+                  name={t === 'voice' ? 'mic' : t === 'chat' ? 'message-square' : 'message-circle'} 
+                  size={16} 
+                  color={agentType === t ? theme.text : theme.textSecondary} 
+                />
+                <ThemedText
+                  type="body"
+                  style={[
+                    styles.flowText,
+                    agentType === t && styles.flowTextActive,
+                  ]}
+                >
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </ThemedText>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
         <View style={styles.inputGroup}>
           <ThemedText type="body" style={{ fontWeight: "500", marginBottom: Spacing.sm }}>
             Agent Name
