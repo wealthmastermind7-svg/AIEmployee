@@ -316,7 +316,7 @@ export default function SettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeIn.delay(500)}>
-          <GlassCard noPadding style={[styles.settingsGroup, { marginTop: Spacing.xl }]}>
+          <GlassCard noPadding style={[styles.settingsGroup, { marginTop: Spacing.xl }] as any}>
             <SettingItem
               icon="lock"
               iconColor={theme.textSecondary}
