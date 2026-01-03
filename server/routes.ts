@@ -22,6 +22,10 @@ const twilioClient = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_T
   ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
   : null;
 
+if (twilioClient) {
+  console.log("Twilio initialized securely with environment variables.");
+}
+
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
@@ -687,7 +691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========================================
 
   // Twilio Voice Webhook
-  app.post("/api/webhooks/voice", async (req: Request, res: Response) => {
+  app.post("/api/webhooks/voice", twilio.webhook({ validate: process.env.NODE_ENV === 'production' }), async (req: Request, res: Response) => {
     const twiml = new twilio.twiml.VoiceResponse();
     const { To, From, CallSid } = req.body;
 
@@ -728,7 +732,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Twilio SMS Webhook
-  app.post("/api/webhooks/sms", async (req: Request, res: Response) => {
+  app.post("/api/webhooks/sms", twilio.webhook({ validate: process.env.NODE_ENV === 'production' }), async (req: Request, res: Response) => {
     const { To, From, Body } = req.body;
     const twiml = new twilio.twiml.MessagingResponse();
 
