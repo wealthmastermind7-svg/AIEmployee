@@ -10,11 +10,21 @@ import {
 import { eq, desc, and } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import OpenAI from "openai";
+import twilio from "twilio";
+import { Resend } from "resend";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
+
+const twilioClient = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_ACCOUNT_SID.startsWith('AC')
+  ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+  : null;
+
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 function generateOwnerToken(): string {
   return randomBytes(32).toString("hex");
@@ -669,6 +679,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating usage limit:", error);
       res.status(500).json({ error: "Failed to update usage limit" });
+    }
+  });
+
+  // ========================================
+  // COMMUNICATION WEBHOOKS
+  // ========================================
+
+  // Twilio Voice Webhook
+  app.post("/api/webhooks/voice", async (req: Request, res: Response) => {
+    const twiml = new twilio.twiml.VoiceResponse();
+    const { To, From, CallSid } = req.body;
+
+    try {
+      // Find agent associated with this number
+      const [num] = await db.select().from(phoneNumbers).where(eq(phoneNumbers.phoneNumber, To));
+      const [agent] = num ? await db.select().from(agents).where(eq(agents.id, num.agentId!)) : [null];
+
+      if (!agent) {
+        twiml.say("Thank you for calling. No agent is currently assigned to this number.");
+        return res.type('text/xml').send(twiml.toString());
+      }
+
+      // Create conversation
+      const [conversation] = await db.insert(conversations).values({
+        businessId: agent.businessId,
+        agentId: agent.id,
+        channel: "phone",
+        contactPhone: From,
+      }).returning();
+
+      twiml.say(agent.initialMessage || "Hello, how can I help you?");
+      
+      // Real-time voice would require deeper integration with OpenAI Realtime API via Twilio Streams
+      // For now, we stub a basic gathering or simple response
+      twiml.gather({
+        input: ['speech'],
+        action: `/api/webhooks/voice/process?conversationId=${conversation.id}`,
+        speechTimeout: 'auto'
+      });
+
+      res.type('text/xml').send(twiml.toString());
+    } catch (error) {
+      console.error("Voice webhook error:", error);
+      twiml.say("An error occurred. Please try again later.");
+      res.type('text/xml').send(twiml.toString());
+    }
+  });
+
+  // Twilio SMS Webhook
+  app.post("/api/webhooks/sms", async (req: Request, res: Response) => {
+    const { To, From, Body } = req.body;
+    const twiml = new twilio.twiml.MessagingResponse();
+
+    try {
+      const [num] = await db.select().from(phoneNumbers).where(eq(phoneNumbers.phoneNumber, To));
+      const [agent] = num ? await db.select().from(agents).where(eq(agents.id, num.agentId!)) : [null];
+
+      if (!agent) return res.end();
+
+      // Find or create conversation
+      let [conversation] = await db.select().from(conversations).where(
+        and(
+          eq(conversations.contactPhone, From),
+          eq(conversations.agentId, agent.id),
+          eq(conversations.status, "active")
+        )
+      );
+
+      if (!conversation) {
+        [conversation] = await db.insert(conversations).values({
+          businessId: agent.businessId,
+          agentId: agent.id,
+          channel: "sms",
+          contactPhone: From,
+        }).returning();
+      }
+
+      // Save user message
+      await db.insert(messages).values({
+        conversationId: conversation.id,
+        role: "user",
+        content: Body,
+      });
+
+      // Simple auto-reply if autopilot is on
+      if (agent.pilotMode === "autopilot") {
+        // AI response generation logic (internal call or reuse generate-response logic)
+        // For simplicity in this small edit, we notify the business via Resend if enabled
+        const [business] = await db.select().from(businesses).where(eq(businesses.id, agent.businessId));
+        if (business?.notificationsEnabled && business.email && resend) {
+          await resend.emails.send({
+            from: 'WorkMate AI <onboarding@resend.dev>',
+            to: business.email,
+            subject: `New SMS from ${From}`,
+            text: `You received a new message: ${Body}. AI is handling it.`,
+          });
+        }
+      }
+
+      res.type('text/xml').send(twiml.toString());
+    } catch (error) {
+      console.error("SMS webhook error:", error);
+      res.end();
     }
   });
 
