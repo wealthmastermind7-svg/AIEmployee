@@ -350,7 +350,7 @@ export default function SettingsScreen() {
 
         <View style={styles.footer}>
           <ThemedText type="caption" style={{ color: theme.textTertiary, textAlign: "center" }}>
-            Workmate AI v1.0.0
+            WorkMate AI Agent v1.0.0
           </ThemedText>
           <View style={styles.footerLinks}>
             <Pressable onPress={() => openUrl("https://replit.com/privacy")}>

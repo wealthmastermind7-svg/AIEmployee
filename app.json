@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "Workmate AI",
-    "slug": "workmate-ai",
+    "name": "WorkMate AI Agent",
+    "slug": "workmate-ai-agent",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "workmateai",
+    "scheme": "workmateaiagent",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.workmateai.app"
+      "bundleIdentifier": "com.workmateaiagent.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +19,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.workmateai.app"
+      "package": "com.workmateaiagent.app"
     },
     "web": {
       "output": "single",
