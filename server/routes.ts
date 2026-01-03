@@ -94,14 +94,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update business
+  // Update business (with whitelisted fields only)
   app.patch("/api/businesses/:id", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const updates = req.body;
+      const { name, email, phone, website, notificationsEnabled, subscriptionTier } = req.body;
+      
+      // Only allow updating specific fields (not ownerToken or slug)
+      const safeUpdates: Record<string, any> = {};
+      if (name !== undefined) safeUpdates.name = name;
+      if (email !== undefined) safeUpdates.email = email;
+      if (phone !== undefined) safeUpdates.phone = phone;
+      if (website !== undefined) safeUpdates.website = website;
+      if (notificationsEnabled !== undefined) safeUpdates.notificationsEnabled = notificationsEnabled;
+      if (subscriptionTier !== undefined) safeUpdates.subscriptionTier = subscriptionTier;
+      
+      if (Object.keys(safeUpdates).length === 0) {
+        return res.status(400).json({ error: "No valid fields to update" });
+      }
       
       const [business] = await db.update(businesses)
-        .set(updates)
+        .set(safeUpdates)
         .where(eq(businesses.id, id))
         .returning();
       

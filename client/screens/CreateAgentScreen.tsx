@@ -79,6 +79,7 @@ export default function CreateAgentScreen() {
   const [personality, setPersonality] = useState("");
   const [pilotMode, setPilotMode] = useState<"off" | "suggestive" | "autopilot">("suggestive");
   const [selectedNumber, setSelectedNumber] = useState<string | null>("existing");
+  const [sliderWidth, setSliderWidth] = useState(280);
 
   const { business } = useBusiness();
 
@@ -118,6 +119,11 @@ export default function CreateAgentScreen() {
       if (!agentName) {
         Alert.alert("Required", "Please give your agent a name.");
         setStep(1);
+        return;
+      }
+
+      if (!business?.id) {
+        Alert.alert("Error", "Business not loaded. Please try again.");
         return;
       }
 
@@ -422,10 +428,10 @@ export default function CreateAgentScreen() {
         <View style={styles.sliderContainer}>
           <Pressable 
             style={styles.sliderTrack}
+            onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
             onPress={(e) => {
               const x = e.nativeEvent.locationX;
-              const width = e.nativeEvent.target ? 280 : 280;
-              const newValue = Math.max(0, Math.min(1, x / width));
+              const newValue = Math.max(0, Math.min(1, x / sliderWidth));
               setResponseStyle(newValue);
               Haptics.selectionAsync();
             }}
