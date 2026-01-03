@@ -1,4 +1,4 @@
-# AI Employee - Design Guidelines
+# WorkMate AI Agent - Design Guidelines
 
 ## Design Philosophy
 Create a **premium, cinematic experience** with handcrafted animations, oversized typography, and liquid glass aesthetics. Every interaction should feel polished with smooth transitions and subtle parallax effects that convey sophistication and cutting-edge AI technology.

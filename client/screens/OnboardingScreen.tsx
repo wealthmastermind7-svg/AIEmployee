@@ -140,7 +140,7 @@ export default function OnboardingScreen() {
           <View style={styles.logoIcon}>
             <Feather name="cpu" size={16} color={theme.primary} />
           </View>
-          <ThemedText type="label" style={styles.logoText}>AI EMPLOYEE</ThemedText>
+          <ThemedText type="label" style={styles.logoText}>WORKMATE AI AGENT</ThemedText>
         </View>
         <Pressable onPress={handleSkip}>
           <ThemedText type="small" style={styles.skipText}>SKIP</ThemedText>
