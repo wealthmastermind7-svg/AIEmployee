@@ -456,7 +456,7 @@ export default function CreateAgentScreen() {
           Haptics.selectionAsync();
           setSelectedNumber("existing");
         }}
-        style={[styles.numberOption, selectedNumber === "existing" ? styles.numberOptionActive : {}]}
+        style={[styles.numberOption, selectedNumber === "existing" ? (styles.numberOptionActive as any) : {}]}
       >
         <View style={[styles.numberIcon, { backgroundColor: `${theme.primary}20` }]}>
           <Feather name="smartphone" size={22} color={theme.primary} />
@@ -467,7 +467,7 @@ export default function CreateAgentScreen() {
             Select from your inventory
           </ThemedText>
         </View>
-        <View style={[styles.radioOuter, selectedNumber !== "existing" && { borderColor: theme.textTertiary }]}>
+        <View style={[styles.radioOuter, selectedNumber !== "existing" && { borderColor: theme.textTertiary }] as any}>
           {selectedNumber === "existing" && <View style={styles.radioInner} />}
         </View>
       </GlassCard>
@@ -477,7 +477,7 @@ export default function CreateAgentScreen() {
           Haptics.selectionAsync();
           setSelectedNumber("new");
         }}
-        style={[styles.numberOption, selectedNumber === "new" ? styles.numberOptionActive : {}]}
+        style={[styles.numberOption, selectedNumber === "new" ? (styles.numberOptionActive as any) : {}]}
       >
         <View style={[styles.numberIcon, { backgroundColor: "rgba(255, 255, 255, 0.05)" }]}>
           <Feather name="phone-call" size={22} color={theme.textSecondary} />
@@ -488,7 +488,7 @@ export default function CreateAgentScreen() {
             Provision a dedicated line
           </ThemedText>
         </View>
-        <View style={[styles.radioOuter, selectedNumber !== "new" && { borderColor: theme.textTertiary }]}>
+        <View style={[styles.radioOuter, selectedNumber !== "new" && { borderColor: theme.textTertiary }] as any}>
           {selectedNumber === "new" && <View style={styles.radioInner} />}
         </View>
       </GlassCard>
