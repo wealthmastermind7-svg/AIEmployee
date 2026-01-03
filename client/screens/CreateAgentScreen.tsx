@@ -84,7 +84,7 @@ export default function CreateAgentScreen() {
 
   const createAgentMutation = useMutation({
     mutationFn: async (agentData: any) => {
-      const res = await apiRequest("POST", "/api/agents", agentData);
+      const res = await apiRequest("POST", `/api/businesses/${business?.id}/agents`, agentData);
       return res.json();
     },
     onSuccess: () => {
