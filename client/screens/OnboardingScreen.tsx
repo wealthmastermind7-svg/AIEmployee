@@ -35,7 +35,6 @@ export default function OnboardingScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const pageOffset = useSharedValue(0);
-  const [localBusinessName, setLocalBusinessName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const { createBusiness } = useBusiness();
 
@@ -76,7 +75,7 @@ export default function OnboardingScreen() {
     setIsCreating(true);
     try {
       console.log("Starting business creation...");
-      const name = (localBusinessName && localBusinessName.trim()) || "My Business";
+      const name = "My Workspace";
       
       // Ensure business context has the necessary state
       const business = await createBusiness(name);
@@ -155,25 +154,6 @@ export default function OnboardingScreen() {
             <Feather name="settings" size={32} color={theme.text} />
           </View>
         </Animated.View>
-
-        <View style={styles.inputGroup}>
-          <ThemedText type="body" style={{ fontWeight: "500", marginBottom: Spacing.sm, textAlign: 'center' }}>
-            Business Name
-          </ThemedText>
-          <View style={styles.inputContainer}>
-            <Feather name="briefcase" size={18} color={theme.textSecondary} />
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., Acme Corp"
-              placeholderTextColor={theme.textTertiary}
-              value={localBusinessName}
-              onChangeText={setLocalBusinessName}
-              autoCorrect={false}
-              spellCheck={false}
-              autoCapitalize="words"
-            />
-          </View>
-        </View>
 
         <Animated.View entering={FadeInUp.delay(400)}>
           <ThemedText type="display" style={styles.heroTitle}>
