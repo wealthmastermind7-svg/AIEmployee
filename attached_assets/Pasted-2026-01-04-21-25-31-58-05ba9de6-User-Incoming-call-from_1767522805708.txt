@@ -1,0 +1,100 @@
+2026-01-04 21:25:31.58
+05ba9de6
+User
+Incoming call from +64274449070 to +12207990010 (CallSid: CAe95b30ad645d30b64fa89fb841b46baf)
+2026-01-04 21:25:34.22
+05ba9de6
+User
+POST /api/webhooks/voice 200 in 2662ms
+2026-01-04 21:28:52.43
+07d69f08
+System
+system: received signal terminated
+2026-01-04 21:36:45.81
+05ba9de6
+System
+system: received signal terminated
+2026-01-04 21:40:39.31
+05ba9de6
+System
+system: received signal terminated
+2026-01-04 21:40:51.73
+05ba9de6
+System
+starting up user application
+2026-01-04 21:40:51.73
+05ba9de6
+System
+metasidecar: loaded enterprise status from environment is_enterprise=false
+2026-01-04 21:40:51.73
+05ba9de6
+System
+forwarding local port 8081 to external port 80 (mapped as 1104)
+2026-01-04 21:40:52.58
+05ba9de6
+User
+> NODE_ENV=production node server_dist/index.js
+2026-01-04 21:40:52.58
+05ba9de6
+User
+> my-app@1.0.0 server:prod
+2026-01-04 21:40:52.68
+05ba9de6
+User
+(Use `node --trace-warnings ...` to show where the warning was created)
+2026-01-04 21:40:52.68
+05ba9de6
+User
+(node:39) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/workspace/server_dist/index.js is not specified and it doesn't parse as CommonJS.
+2026-01-04 21:40:52.68
+05ba9de6
+User
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+2026-01-04 21:40:52.68
+05ba9de6
+User
+To eliminate this warning, add "type": "module" to /home/runner/workspace/package.json.
+2026-01-04 21:40:53.57
+05ba9de6
+User
+Twilio initialized securely with environment variables.
+2026-01-04 21:40:53.58
+05ba9de6
+User
+Expo routing: Checking expo-platform header on / and /manifest
+2026-01-04 21:40:53.58
+05ba9de6
+User
+Serving static Expo files with dynamic manifest routing
+2026-01-04 21:40:53.59
+05ba9de6
+User
+express server serving on port 8081
+2026-01-04 21:40:53.92
+05ba9de6
+User
+baseUrl http://127.0.0.1:1104
+2026-01-04 21:40:53.92
+05ba9de6
+User
+expsUrl 127.0.0.1:1104
+2026-01-04 21:48:52.51
+05ba9de6
+User
+baseUrl https://ai-employee--wealthmastermin.replit.app
+2026-01-04 21:48:52.51
+05ba9de6
+User
+expsUrl ai-employee--wealthmastermin.replit.app
+2026-01-04 21:49:05.82
+05ba9de6
+User
+POST /api/businesses 201 in 679ms :: {"id":"33a13546-34b1-4b0d-b9fa-274b34c44c3…
+2026-01-04 21:49:06.35
+05ba9de6
+User
+GET /api/businesses/33a13546-34b1-4b0d-b9fa-274b34c44c32/stats 200 in 126ms :: …
+2026-01-04 21:49:08.39
+05ba9de6
+User
+GET /api/businesses/33a13546-34b1-4b0d-b9fa-274b34c44c32/agents 200 in 42ms :: …
