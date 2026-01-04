@@ -458,12 +458,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get agent personality/system prompt
       let systemPrompt = "You are a helpful AI assistant for a business. Be professional, friendly, and helpful.";
+      let knowledgeBase = "";
+      
       if (conversation.agentId) {
         const [agent] = await db.select().from(agents).where(eq(agents.id, conversation.agentId));
         if (agent?.personality) {
           systemPrompt = agent.personality;
         }
+        
+        // Get training data for this agent (knowledge base)
+        const agentTrainingData = await db.select().from(trainingData)
+          .where(eq(trainingData.agentId, conversation.agentId))
+          .orderBy(desc(trainingData.createdAt))
+          .limit(20);
+        
+        if (agentTrainingData.length > 0) {
+          const qaContent = agentTrainingData
+            .filter(d => d.type === "qa_pair" && d.question && d.answer)
+            .map(d => `Q: ${d.question}\nA: ${d.answer}`)
+            .join("\n\n");
+          
+          const websiteContent = agentTrainingData
+            .filter(d => d.type === "website_crawl" && d.content)
+            .map(d => `[Source: ${d.title || d.sourceUrl}]\n${d.content?.substring(0, 2000)}`)
+            .join("\n\n---\n\n");
+          
+          if (qaContent || websiteContent) {
+            knowledgeBase = "\n\n## Knowledge Base\nUse the following information to answer questions accurately:\n\n";
+            if (qaContent) {
+              knowledgeBase += "### FAQ:\n" + qaContent + "\n\n";
+            }
+            if (websiteContent) {
+              knowledgeBase += "### Website Content:\n" + websiteContent + "\n";
+            }
+          }
+        }
       }
+      
+      // Combine system prompt with knowledge base
+      const fullSystemPrompt = systemPrompt + knowledgeBase;
       
       // Get message history
       const messageHistory = await db.select().from(messages)
@@ -471,7 +504,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .orderBy(messages.createdAt);
       
       const chatMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
-        { role: "system", content: systemPrompt },
+        { role: "system", content: fullSystemPrompt },
         ...messageHistory.map(m => ({
           role: (m.role === "agent" ? "assistant" : m.role) as "user" | "assistant",
           content: m.content,

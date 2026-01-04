@@ -5,6 +5,7 @@ import MainTabNavigator from "@/navigation/MainTabNavigator";
 import ConversationDetailScreen from "@/screens/ConversationDetailScreen";
 import CreateAgentScreen from "@/screens/CreateAgentScreen";
 import AgentDetailScreen from "@/screens/AgentDetailScreen";
+import AgentTrainingScreen from "@/screens/AgentTrainingScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import UsageScreen from "@/screens/UsageScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
@@ -16,6 +17,7 @@ export type RootStackParamList = {
   ConversationDetail: { conversationId: string };
   CreateAgent: undefined;
   AgentDetail: { agentId: string };
+  AgentTraining: { agentId: string; agentName: string };
   Usage: undefined;
 };
 
@@ -85,6 +87,14 @@ export default function RootStackNavigator() {
         component={UsageScreen}
         options={{
           headerTitle: "AI Usage",
+          headerBackTitle: "Back",
+        }}
+      />
+      <Stack.Screen
+        name="AgentTraining"
+        component={AgentTrainingScreen}
+        options={{
+          headerTitle: "Train Agent",
           headerBackTitle: "Back",
         }}
       />

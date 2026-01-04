@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { StyleSheet, View, ScrollView, Pressable, Switch } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRoute, RouteProp } from "@react-navigation/native";
+import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
@@ -14,6 +15,7 @@ import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type RouteProps = RouteProp<RootStackParamList, "AgentDetail">;
+type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 
 interface CallLog {
   id: string;
@@ -33,6 +35,7 @@ const MOCK_CALL_LOGS: CallLog[] = [
 export default function AgentDetailScreen() {
   const insets = useSafeAreaInsets();
   const route = useRoute<RouteProps>();
+  const navigation = useNavigation<NavigationProps>();
   const theme = Colors.dark;
 
   const [isActive, setIsActive] = useState(true);
@@ -233,12 +236,27 @@ export default function AgentDetailScreen() {
 
         <View style={styles.actionButtons}>
           <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate("AgentTraining", {
+                agentId: route.params.agentId,
+                agentName: "Support Voice Bot",
+              });
+            }}
+            style={styles.trainButton}
+          >
+            <Feather name="book-open" size={18} color={theme.text} />
+            <ThemedText type="body" style={{ fontWeight: "600", marginLeft: Spacing.sm }}>
+              Train
+            </ThemedText>
+          </Pressable>
+          <Pressable
             onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
             style={styles.editButton}
           >
             <Feather name="edit-2" size={18} color={theme.text} />
             <ThemedText type="body" style={{ fontWeight: "600", marginLeft: Spacing.sm }}>
-              Edit Agent
+              Edit
             </ThemedText>
           </Pressable>
           <Pressable
@@ -390,6 +408,15 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: "row",
     gap: Spacing.md,
+  },
+  trainButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.dark.success,
+    paddingVertical: Spacing.lg,
+    borderRadius: BorderRadius.xl,
   },
   editButton: {
     flex: 1,
