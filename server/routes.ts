@@ -924,6 +924,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add an existing phone number manually
+  app.post("/api/businesses/:businessId/phone-numbers/add-existing", async (req: Request, res: Response) => {
+    try {
+      const { businessId } = req.params;
+      const { phoneNumber } = req.body;
+
+      if (!phoneNumber) {
+        return res.status(400).json({ error: "Phone number is required" });
+      }
+
+      // Format phone number (ensure it starts with +)
+      const formattedNumber = phoneNumber.startsWith("+") ? phoneNumber : `+${phoneNumber.replace(/\D/g, "")}`;
+
+      // Check if number already exists
+      const [existing] = await db.select().from(phoneNumbers)
+        .where(eq(phoneNumbers.phoneNumber, formattedNumber));
+      
+      if (existing) {
+        return res.status(400).json({ error: "This phone number is already registered" });
+      }
+
+      // Save to database
+      const [saved] = await db.insert(phoneNumbers).values({
+        businessId,
+        phoneNumber: formattedNumber,
+        twilioSid: "manual-entry",
+        isActive: true,
+      }).returning();
+
+      res.status(201).json(saved);
+    } catch (error: any) {
+      console.error("Error adding existing phone number:", error);
+      res.status(500).json({ error: error.message || "Failed to add phone number" });
+    }
+  });
+
   // Assign phone number to an agent
   app.put("/api/phone-numbers/:phoneNumberId/assign", async (req: Request, res: Response) => {
     try {

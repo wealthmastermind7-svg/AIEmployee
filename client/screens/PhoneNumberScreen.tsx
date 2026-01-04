@@ -53,6 +53,7 @@ export function PhoneNumberScreen({ navigation }: Props) {
   const queryClient = useQueryClient();
   const { business } = useBusiness();
   const [areaCode, setAreaCode] = useState("");
+  const [existingNumber, setExistingNumber] = useState("");
   const [searchResults, setSearchResults] = useState<AvailableNumber[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedNumber, setSelectedNumber] = useState<PhoneNumber | null>(null);
@@ -100,6 +101,30 @@ export function PhoneNumberScreen({ navigation }: Props) {
       Alert.alert("Error", error.message || "Failed to purchase phone number");
     },
   });
+
+  const addExistingMutation = useMutation({
+    mutationFn: async (phoneNumber: string) => {
+      const response = await apiRequest("POST", `/api/businesses/${businessId}/phone-numbers/add-existing`, { phoneNumber });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/businesses/${businessId}/phone-numbers`] });
+      setExistingNumber("");
+      Alert.alert("Success", "Phone number added! You can now assign it to an agent.");
+    },
+    onError: (error: any) => {
+      Alert.alert("Error", error.message || "Failed to add phone number");
+    },
+  });
+
+  const handleAddExisting = () => {
+    if (!existingNumber.trim()) {
+      Alert.alert("Error", "Please enter a phone number");
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    addExistingMutation.mutate(existingNumber);
+  };
 
   const assignMutation = useMutation({
     mutationFn: async ({ phoneNumberId, agentId }: { phoneNumberId: string; agentId: string | null }) => {
@@ -241,6 +266,36 @@ export function PhoneNumberScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.section}>
+          <ThemedText type="h3" style={styles.sectionTitle}>
+            Add Existing Number
+          </ThemedText>
+          <ThemedText type="body" style={{ color: theme.textSecondary, marginBottom: Spacing.md }}>
+            Already have a phone number? Enter it below to link it to an agent.
+          </ThemedText>
+          <View style={styles.searchRow}>
+            <TextInput
+              style={styles.input}
+              placeholder="+1 (555) 123-4567"
+              placeholderTextColor={theme.textSecondary}
+              value={existingNumber}
+              onChangeText={setExistingNumber}
+              keyboardType="phone-pad"
+            />
+            <Pressable
+              style={[styles.searchButton, { backgroundColor: theme.success }]}
+              onPress={handleAddExisting}
+              disabled={addExistingMutation.isPending}
+            >
+              {addExistingMutation.isPending ? (
+                <ActivityIndicator color={theme.text} />
+              ) : (
+                <Feather name="plus" size={20} color={theme.text} />
+              )}
+            </Pressable>
+          </View>
+        </View>
+
         <View style={styles.section}>
           <ThemedText type="h3" style={styles.sectionTitle}>
             Search Available Numbers
