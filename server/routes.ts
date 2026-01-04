@@ -726,9 +726,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========================================
 
   // Twilio Voice Webhook
-  app.post("/api/webhooks/voice", twilio.webhook({ validate: process.env.NODE_ENV === 'production' }), async (req: Request, res: Response) => {
+  app.post("/api/webhooks/voice", async (req: Request, res: Response) => {
     const twiml = new twilio.twiml.VoiceResponse();
     const { To, From, CallSid } = req.body;
+
+    console.log(`Incoming call from ${From} to ${To} (CallSid: ${CallSid})`);
 
     try {
       // Find agent associated with this number
@@ -736,7 +738,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const [agent] = num ? await db.select().from(agents).where(eq(agents.id, num.agentId!)) : [null];
 
       if (!agent) {
-        twiml.say("Thank you for calling. No agent is currently assigned to this number.");
+        twiml.say("Thank you for calling Work Mate AI. No agent is currently assigned to this number. Please try again later.");
         return res.type('text/xml').send(twiml.toString());
       }
 
@@ -767,7 +769,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Twilio SMS Webhook
-  app.post("/api/webhooks/sms", twilio.webhook({ validate: process.env.NODE_ENV === 'production' }), async (req: Request, res: Response) => {
+  app.post("/api/webhooks/sms", async (req: Request, res: Response) => {
     const { To, From, Body } = req.body;
     const twiml = new twilio.twiml.MessagingResponse();
 
@@ -824,89 +826,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ========================================
-  // TWILIO WEBHOOKS
-  // ========================================
-
-  // Voice Webhook
-  app.post("/api/webhooks/voice", async (req: Request, res: Response) => {
-    try {
-      console.log("Twilio Voice Webhook received:", JSON.stringify(req.body, null, 2));
-      
-      // Validate Twilio signature in production
-      if (process.env.NODE_ENV === "production") {
-        const twilioSignature = req.headers["x-twilio-signature"] as string;
-        const protocol = req.headers["x-forwarded-proto"] || "https";
-        const host = req.headers.host;
-        const url = `${protocol}://${host}/api/webhooks/voice`;
-        const params = req.body;
-        
-        console.log("Validating Twilio signature for URL:", url);
-        
-        if (!twilio.validateRequest(process.env.TWILIO_AUTH_TOKEN || "", twilioSignature, url, params)) {
-          console.error("Invalid Twilio signature for voice webhook");
-          // return res.status(403).send("Forbidden"); // Temporarily commented out to debug
-        }
-      }
-
-      const { From, To, CallSid } = req.body;
-      console.log(`Incoming call from ${From} to ${To} (CallSid: ${CallSid})`);
-
-      const twiml = new twilio.twiml.VoiceResponse();
-      
-      // Default greeting
-      twiml.say("Hello, thank you for calling Work Mate AI. One moment while I connect you to our AI agent.");
-      
-      // Connect to Realtime AI (stub for now, would use WebSockets in production)
-      twiml.say("I'm sorry, the AI agent is currently training. Please leave a message after the beep.");
-      twiml.record({ maxLength: 30, action: "/api/webhooks/voice/recorded" });
-
-      res.type("text/xml");
-      res.send(twiml.toString());
-    } catch (error) {
-      console.error("Voice webhook error:", error);
-      res.status(500).send("Error");
-    }
-  });
-
-  // Recorded Webhook
-  app.post("/api/webhooks/voice/recorded", async (req: Request, res: Response) => {
-    console.log("Recording received:", req.body.RecordingUrl);
+  // Voice process webhook (handles speech input)
+  app.post("/api/webhooks/voice/process", async (req: Request, res: Response) => {
     const twiml = new twilio.twiml.VoiceResponse();
-    twiml.say("Thank you for your message. Goodbye.");
-    res.type("text/xml");
-    res.send(twiml.toString());
-  });
+    const { SpeechResult } = req.body;
+    const conversationId = req.query.conversationId as string;
 
-  // SMS Webhook
-  app.post("/api/webhooks/sms", async (req: Request, res: Response) => {
     try {
-      // Validate Twilio signature in production
-      if (process.env.NODE_ENV === "production") {
-        const twilioSignature = req.headers["x-twilio-signature"] as string;
-        const url = `${process.env.EXPO_PUBLIC_DOMAIN}/api/webhooks/sms`;
-        const params = req.body;
-        
-        if (!twilio.validateRequest(process.env.TWILIO_AUTH_TOKEN || "", twilioSignature, url, params)) {
-          console.error("Invalid Twilio signature for SMS webhook");
-          return res.status(403).send("Forbidden");
-        }
+      if (SpeechResult && conversationId) {
+        // Save user message
+        await db.insert(messages).values({
+          conversationId,
+          role: "user",
+          content: SpeechResult,
+        });
       }
 
-      const { From, Body, MessageSid } = req.body;
-      console.log(`Incoming SMS from ${From}: ${Body} (MessageSid: ${MessageSid})`);
-
-      const twiml = new twilio.twiml.MessagingResponse();
-      
-      // AI Processing logic would go here
-      const response = "Thanks for contacting us! Our AI agent is processing your request and will get back to you shortly.";
-      twiml.message(response);
-
-      res.type("text/xml");
-      res.send(twiml.toString());
+      twiml.say("Thank you for your message. We'll get back to you soon. Goodbye!");
+      res.type('text/xml').send(twiml.toString());
     } catch (error) {
-      console.error("SMS webhook error:", error);
-      res.status(500).send("Error");
+      console.error("Voice process error:", error);
+      twiml.say("An error occurred. Goodbye.");
+      res.type('text/xml').send(twiml.toString());
     }
   });
 
