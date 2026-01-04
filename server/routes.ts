@@ -837,6 +837,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ========================================
+  // PHONE NUMBER MANAGEMENT
+  // ========================================
+
+  // Get all phone numbers for a business
+  app.get("/api/businesses/:businessId/phone-numbers", async (req: Request, res: Response) => {
+    try {
+      const { businessId } = req.params;
+      const numbers = await db.select().from(phoneNumbers)
+        .where(eq(phoneNumbers.businessId, businessId));
+      res.json(numbers);
+    } catch (error) {
+      console.error("Error fetching phone numbers:", error);
+      res.status(500).json({ error: "Failed to fetch phone numbers" });
+    }
+  });
+
+  // Search available Twilio phone numbers
+  app.get("/api/twilio/search-numbers", async (req: Request, res: Response) => {
+    try {
+      const { areaCode, country = "US" } = req.query;
+      
+      if (!twilioClient) {
+        return res.status(400).json({ error: "Twilio not configured" });
+      }
+
+      const searchParams: any = { voiceEnabled: true, smsEnabled: true, limit: 10 };
+      if (areaCode) {
+        searchParams.areaCode = areaCode as string;
+      }
+
+      const availableNumbers = await twilioClient.availablePhoneNumbers(country as string)
+        .local.list(searchParams);
+      
+      res.json(availableNumbers.map(n => ({
+        phoneNumber: n.phoneNumber,
+        friendlyName: n.friendlyName,
+        locality: n.locality,
+        region: n.region,
+        capabilities: n.capabilities,
+      })));
+    } catch (error) {
+      console.error("Error searching phone numbers:", error);
+      res.status(500).json({ error: "Failed to search phone numbers" });
+    }
+  });
+
+  // Purchase a Twilio phone number
+  app.post("/api/businesses/:businessId/phone-numbers/purchase", async (req: Request, res: Response) => {
+    try {
+      const { businessId } = req.params;
+      const { phoneNumber } = req.body;
+
+      if (!twilioClient) {
+        return res.status(400).json({ error: "Twilio not configured" });
+      }
+
+      // Get webhook base URL
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : process.env.EXPO_PUBLIC_DOMAIN
+        ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
+        : "https://example.com";
+
+      // Purchase the number from Twilio
+      const purchased = await twilioClient.incomingPhoneNumbers.create({
+        phoneNumber,
+        voiceUrl: `${baseUrl}/api/webhooks/voice`,
+        voiceMethod: "POST",
+        smsUrl: `${baseUrl}/api/webhooks/sms`,
+        smsMethod: "POST",
+      });
+
+      // Save to database
+      const [saved] = await db.insert(phoneNumbers).values({
+        businessId,
+        phoneNumber: purchased.phoneNumber,
+        twilioSid: purchased.sid,
+        isActive: true,
+      }).returning();
+
+      res.status(201).json(saved);
+    } catch (error: any) {
+      console.error("Error purchasing phone number:", error);
+      res.status(500).json({ error: error.message || "Failed to purchase phone number" });
+    }
+  });
+
+  // Assign phone number to an agent
+  app.put("/api/phone-numbers/:phoneNumberId/assign", async (req: Request, res: Response) => {
+    try {
+      const { phoneNumberId } = req.params;
+      const { agentId } = req.body;
+
+      const [updated] = await db.update(phoneNumbers)
+        .set({ agentId: agentId || null })
+        .where(eq(phoneNumbers.id, phoneNumberId))
+        .returning();
+
+      if (!updated) {
+        return res.status(404).json({ error: "Phone number not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error assigning phone number:", error);
+      res.status(500).json({ error: "Failed to assign phone number" });
+    }
+  });
+
+  // Get phone number assigned to an agent
+  app.get("/api/agents/:agentId/phone-number", async (req: Request, res: Response) => {
+    try {
+      const { agentId } = req.params;
+      const [number] = await db.select().from(phoneNumbers)
+        .where(eq(phoneNumbers.agentId, agentId));
+      res.json(number || null);
+    } catch (error) {
+      console.error("Error fetching agent phone number:", error);
+      res.status(500).json({ error: "Failed to fetch phone number" });
+    }
+  });
+
+  // ========================================
   // USAGE ROUTES
   // ========================================
 

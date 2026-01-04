@@ -243,6 +243,21 @@ export default function SettingsScreen() {
           </GlassCard>
         </Animated.View>
 
+        <Animated.View entering={FadeIn.delay(250)}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Communication
+          </ThemedText>
+          <GlassCard noPadding style={styles.settingsGroup}>
+            <SettingItem
+              icon="phone"
+              iconColor={theme.success}
+              title="Phone Numbers"
+              subtitle="Manage Twilio numbers for your agents"
+              onPress={() => navigation.navigate("PhoneNumbers")}
+            />
+          </GlassCard>
+        </Animated.View>
+
         <Animated.View entering={FadeIn.delay(300)}>
           <ThemedText type="h4" style={styles.sectionTitle}>
             AI Behavior

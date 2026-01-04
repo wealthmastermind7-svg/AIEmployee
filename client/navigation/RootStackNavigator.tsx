@@ -6,6 +6,7 @@ import ConversationDetailScreen from "@/screens/ConversationDetailScreen";
 import CreateAgentScreen from "@/screens/CreateAgentScreen";
 import AgentDetailScreen from "@/screens/AgentDetailScreen";
 import AgentTrainingScreen from "@/screens/AgentTrainingScreen";
+import { PhoneNumberScreen } from "@/screens/PhoneNumberScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import UsageScreen from "@/screens/UsageScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
@@ -18,6 +19,7 @@ export type RootStackParamList = {
   CreateAgent: undefined;
   AgentDetail: { agentId: string };
   AgentTraining: { agentId: string; agentName: string };
+  PhoneNumbers: undefined;
   Usage: undefined;
 };
 
@@ -95,6 +97,14 @@ export default function RootStackNavigator() {
         component={AgentTrainingScreen}
         options={{
           headerTitle: "Train Agent",
+          headerBackTitle: "Back",
+        }}
+      />
+      <Stack.Screen
+        name="PhoneNumbers"
+        component={PhoneNumberScreen}
+        options={{
+          headerTitle: "Phone Numbers",
           headerBackTitle: "Back",
         }}
       />
