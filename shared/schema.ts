@@ -150,15 +150,19 @@ export const messagesRelations = relations(messages, ({ one }) => ({
 }));
 
 // ========================================
-// TRAINING DATA
+// TRAINING DATA (Knowledge Base)
 // ========================================
 export const trainingData = pgTable("training_data", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   businessId: varchar("business_id").references(() => businesses.id).notNull(),
+  agentId: varchar("agent_id").references(() => agents.id),
   type: text("type").notNull(), // 'qa_pair', 'website_crawl', 'document'
   question: text("question"),
   answer: text("answer"),
+  content: text("content"), // For website crawl content
+  title: text("title"), // Page title for crawled content
   sourceUrl: text("source_url"),
+  status: text("status").default("active").notNull(), // 'active', 'processing', 'error'
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -166,6 +170,10 @@ export const trainingDataRelations = relations(trainingData, ({ one }) => ({
   business: one(businesses, {
     fields: [trainingData.businessId],
     references: [businesses.id],
+  }),
+  agent: one(agents, {
+    fields: [trainingData.agentId],
+    references: [agents.id],
   }),
 }));
 

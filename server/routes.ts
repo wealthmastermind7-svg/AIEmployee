@@ -637,6 +637,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get training data for specific agent
+  app.get("/api/agents/:agentId/training", async (req: Request, res: Response) => {
+    try {
+      const { agentId } = req.params;
+      const data = await db.select().from(trainingData)
+        .where(eq(trainingData.agentId, agentId))
+        .orderBy(desc(trainingData.createdAt));
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching agent training data:", error);
+      res.status(500).json({ error: "Failed to fetch training data" });
+    }
+  });
+
+  // Add Q&A pair for agent
+  app.post("/api/agents/:agentId/training/qa", async (req: Request, res: Response) => {
+    try {
+      const { agentId } = req.params;
+      const { question, answer } = req.body;
+      
+      // Get agent to find businessId
+      const [agent] = await db.select().from(agents).where(eq(agents.id, agentId));
+      if (!agent) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
+      
+      const [data] = await db.insert(trainingData).values({
+        businessId: agent.businessId,
+        agentId,
+        type: "qa_pair",
+        question,
+        answer,
+      }).returning();
+      
+      res.status(201).json(data);
+    } catch (error) {
+      console.error("Error adding Q&A pair:", error);
+      res.status(500).json({ error: "Failed to add Q&A pair" });
+    }
+  });
+
+  // Crawl website for agent training
+  app.post("/api/agents/:agentId/training/crawl", async (req: Request, res: Response) => {
+    try {
+      const { agentId } = req.params;
+      const { url } = req.body;
+      
+      if (!url) {
+        return res.status(400).json({ error: "URL is required" });
+      }
+      
+      // Get agent to find businessId
+      const [agent] = await db.select().from(agents).where(eq(agents.id, agentId));
+      if (!agent) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
+      
+      // Fetch website content
+      console.log(`Crawling website: ${url}`);
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; WorkMateBot/1.0; +https://workmate.ai)',
+        },
+      });
+      
+      if (!response.ok) {
+        return res.status(400).json({ error: `Failed to fetch website: ${response.status}` });
+      }
+      
+      const html = await response.text();
+      
+      // Extract text content from HTML (simple extraction)
+      const textContent = html
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // Remove scripts
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // Remove styles
+        .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '') // Remove nav
+        .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '') // Remove footer
+        .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '') // Remove header
+        .replace(/<[^>]+>/g, ' ') // Remove HTML tags
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .trim()
+        .substring(0, 50000); // Limit content size
+      
+      // Extract title
+      const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+      const title = titleMatch ? titleMatch[1].trim() : url;
+      
+      // Save to database
+      const [data] = await db.insert(trainingData).values({
+        businessId: agent.businessId,
+        agentId,
+        type: "website_crawl",
+        title,
+        content: textContent,
+        sourceUrl: url,
+        status: "active",
+      }).returning();
+      
+      console.log(`Crawled ${url}: ${textContent.length} characters`);
+      
+      res.status(201).json({
+        ...data,
+        contentLength: textContent.length,
+        preview: textContent.substring(0, 500),
+      });
+    } catch (error) {
+      console.error("Error crawling website:", error);
+      res.status(500).json({ error: "Failed to crawl website" });
+    }
+  });
+
   // ========================================
   // INTEGRATIONS ROUTES
   // ========================================
