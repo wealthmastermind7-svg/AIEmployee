@@ -1,0 +1,101 @@
+{
+  "id": "b25a67fd-c971-444f-8796-e5f2d6625f14",
+  "createdAt": "2026-01-04T10:29:56.930Z",
+  "runtimeVersion": "exposdk:54.0.0",
+  "launchAsset": {
+    "key": "bundle-1767522596930-721",
+    "contentType": "application/javascript",
+    "url": "https://6c072ffd-75a7-4c06-bf9c-f216c7244883-00-2lwfw2u2zl9ik.janeway.replit.dev/1767522596930-721/_expo/static/js/android/bundle.js"
+  },
+  "assets": [],
+  "metadata": {},
+  "extra": {
+    "eas": {},
+    "expoClient": {
+      "name": "WorkMate AI Agent",
+      "slug": "workmate-ai-agent",
+      "version": "1.0.0",
+      "orientation": "portrait",
+      "icon": "./assets/images/icon.png",
+      "scheme": "workmateaiagent",
+      "userInterfaceStyle": "dark",
+      "newArchEnabled": true,
+      "ios": {
+        "supportsTablet": true,
+        "bundleIdentifier": "com.workmateaiagent.app"
+      },
+      "android": {
+        "adaptiveIcon": {
+          "backgroundColor": "#101622",
+          "foregroundImage": "./assets/images/icon.png",
+          "foregroundImageUrl": "https://6c072ffd-75a7-4c06-bf9c-f216c7244883-00-2lwfw2u2zl9ik.janeway.replit.dev/assets/./assets/images/icon.png"
+        },
+        "edgeToEdgeEnabled": true,
+        "predictiveBackGestureEnabled": false,
+        "package": "com.workmateaiagent.app"
+      },
+      "web": {
+        "output": "single",
+        "favicon": "./assets/images/favicon.png"
+      },
+      "plugins": [
+        [
+          "expo-splash-screen",
+          {
+            "image": "./assets/images/splash-icon.png",
+            "imageWidth": 200,
+            "resizeMode": "contain",
+            "backgroundColor": "#101622",
+            "dark": {
+              "backgroundColor": "#101622"
+            }
+          }
+        ],
+        "expo-web-browser"
+      ],
+      "experiments": {
+        "reactCompiler": true
+      },
+      "_internal": {
+        "isDebug": false,
+        "projectRoot": "/home/runner/workspace",
+        "dynamicConfigPath": {},
+        "staticConfigPath": "/home/runner/workspace/app.json",
+        "packageJsonPath": "/home/runner/workspace/package.json",
+        "pluginHistory": {
+          "expo-splash-screen": {
+            "name": "expo-splash-screen",
+            "version": "31.0.11"
+          },
+          "expo-web-browser": {
+            "name": "expo-web-browser",
+            "version": "15.0.9"
+          }
+        }
+      },
+      "sdkVersion": "54.0.0",
+      "platforms": [
+        "ios",
+        "android",
+        "web"
+      ],
+      "androidStatusBar": {
+        "backgroundColor": "#101622"
+      },
+      "iconUrl": "https://6c072ffd-75a7-4c06-bf9c-f216c7244883-00-2lwfw2u2zl9ik.janeway.replit.dev/assets/./assets/images/icon.png",
+      "hostUri": "6c072ffd-75a7-4c06-bf9c-f216c7244883-00-2lwfw2u2zl9ik.janeway.replit.dev/android"
+    },
+    "expoGo": {
+      "debuggerHost": "6c072ffd-75a7-4c06-bf9c-f216c7244883-00-2lwfw2u2zl9ik.janeway.replit.dev/android",
+      "developer": {
+        "tool": "expo-cli",
+        "projectRoot": "/home/runner/workspace"
+      },
+      "packagerOpts": {
+        "dev": false
+      },
+      "mainModuleName": "client/index"
+    },
+    "scopeKey": "@anonymous/workmate-ai-agent-600dac0d-3c0a-49f3-817e-9d3ea426bbc6"
+  }
+}
