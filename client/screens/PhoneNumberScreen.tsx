@@ -70,7 +70,7 @@ export function PhoneNumberScreen({ navigation }: Props) {
   const searchMutation = useMutation({
     mutationFn: async () => {
       setIsSearching(true);
-      const url = new URL("/api/twilio/search-numbers", getApiUrl());
+      const url = new URL("/api/phone-provider/search-numbers", getApiUrl());
       if (areaCode) url.searchParams.set("areaCode", areaCode);
       const response = await fetch(url.toString());
       if (!response.ok) throw new Error("Search failed");
@@ -82,7 +82,7 @@ export function PhoneNumberScreen({ navigation }: Props) {
     },
     onError: () => {
       setIsSearching(false);
-      Alert.alert("Error", "Failed to search for phone numbers. Make sure Twilio is configured.");
+      Alert.alert("Error", "Failed to search for phone numbers. Please check your phone provider configuration.");
     },
   });
 
@@ -125,7 +125,7 @@ export function PhoneNumberScreen({ navigation }: Props) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       "Purchase Number",
-      `Are you sure you want to purchase ${phoneNumber}? This will charge your Twilio account.`,
+      `Are you sure you want to purchase ${phoneNumber}? Standard rates apply.`,
       [
         { text: "Cancel", style: "cancel" },
         { text: "Purchase", onPress: () => purchaseMutation.mutate(phoneNumber) },

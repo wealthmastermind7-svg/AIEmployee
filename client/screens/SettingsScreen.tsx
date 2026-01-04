@@ -252,7 +252,7 @@ export default function SettingsScreen() {
               icon="phone"
               iconColor={theme.success}
               title="Phone Numbers"
-              subtitle="Manage Twilio numbers for your agents"
+              subtitle="Manage phone numbers for your agents"
               onPress={() => navigation.navigate("PhoneNumbers")}
             />
           </GlassCard>

@@ -854,7 +854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Search available Twilio phone numbers
-  app.get("/api/twilio/search-numbers", async (req: Request, res: Response) => {
+  app.get("/api/phone-provider/search-numbers", async (req: Request, res: Response) => {
     try {
       const { areaCode, country = "US" } = req.query;
       
