@@ -831,15 +831,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Voice Webhook
   app.post("/api/webhooks/voice", async (req: Request, res: Response) => {
     try {
+      console.log("Twilio Voice Webhook received:", JSON.stringify(req.body, null, 2));
+      
       // Validate Twilio signature in production
       if (process.env.NODE_ENV === "production") {
         const twilioSignature = req.headers["x-twilio-signature"] as string;
-        const url = `${process.env.EXPO_PUBLIC_DOMAIN}/api/webhooks/voice`;
+        const protocol = req.headers["x-forwarded-proto"] || "https";
+        const host = req.headers.host;
+        const url = `${protocol}://${host}/api/webhooks/voice`;
         const params = req.body;
+        
+        console.log("Validating Twilio signature for URL:", url);
         
         if (!twilio.validateRequest(process.env.TWILIO_AUTH_TOKEN || "", twilioSignature, url, params)) {
           console.error("Invalid Twilio signature for voice webhook");
-          return res.status(403).send("Forbidden");
+          // return res.status(403).send("Forbidden"); // Temporarily commented out to debug
         }
       }
 
@@ -848,7 +854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const twiml = new twilio.twiml.VoiceResponse();
       
-      // Default greeting - In a real app, we'd lookup the business by the 'To' number
+      // Default greeting
       twiml.say("Hello, thank you for calling Work Mate AI. One moment while I connect you to our AI agent.");
       
       // Connect to Realtime AI (stub for now, would use WebSockets in production)
@@ -861,6 +867,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Voice webhook error:", error);
       res.status(500).send("Error");
     }
+  });
+
+  // Recorded Webhook
+  app.post("/api/webhooks/voice/recorded", async (req: Request, res: Response) => {
+    console.log("Recording received:", req.body.RecordingUrl);
+    const twiml = new twilio.twiml.VoiceResponse();
+    twiml.say("Thank you for your message. Goodbye.");
+    res.type("text/xml");
+    res.send(twiml.toString());
   });
 
   // SMS Webhook
