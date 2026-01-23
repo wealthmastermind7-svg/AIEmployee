@@ -7,7 +7,7 @@ import {
   insertBusinessSchema, insertAgentSchema, insertAgentGoalSchema,
   insertConversationSchema, insertMessageSchema, insertTrainingDataSchema
 } from "@shared/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import OpenAI from "openai";
 import twilio from "twilio";
@@ -1042,8 +1042,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`Incoming call from ${From} to ${To} (CallSid: ${CallSid})`);
 
     try {
-      // Find agent associated with this number
-      const [num] = await db.select().from(phoneNumbers).where(eq(phoneNumbers.phoneNumber, To));
+      // Clean incoming number (strip common characters)
+      const cleanTo = To.replace(/[^\d+]/g, '');
+      console.log(`Incoming call from ${From} to ${To} (Cleaned: ${cleanTo}) (CallSid: ${CallSid})`);
+
+      // Find agent associated with this number (try both formatted and clean versions)
+      const [num] = await db.select().from(phoneNumbers)
+        .where(sql`${phoneNumbers.phoneNumber} = ${To} OR ${phoneNumbers.phoneNumber} = ${cleanTo} OR ${phoneNumbers.phoneNumber} = ${To.replace('+1', '')}`);
       const [agent] = num ? await db.select().from(agents).where(eq(agents.id, num.agentId!)) : [null];
 
       if (!agent) {
