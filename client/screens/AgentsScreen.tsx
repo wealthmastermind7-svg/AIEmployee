@@ -61,9 +61,10 @@ export default function AgentsScreen() {
   const [activeFilter, setActiveFilter] = useState<AgentType>("all");
   const { business } = useBusiness();
 
-  const { data: agents = [], isLoading } = useQuery<Agent[]>({
+  const { data: agents = [], isLoading, refetch } = useQuery<Agent[]>({
     queryKey: ["/api/businesses", business?.id, "agents"],
     enabled: !!business?.id,
+    staleTime: 0, // Ensure we always check for fresh data
   });
 
   const handleFilterPress = (filter: AgentType) => {

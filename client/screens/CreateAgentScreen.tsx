@@ -88,8 +88,12 @@ export default function CreateAgentScreen() {
       const res = await apiRequest("POST", `/api/businesses/${business?.id}/agents`, agentData);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/businesses/${business?.id}/agents`] });
+      // Also update the cache directly for immediate feedback
+      queryClient.setQueryData<any[]>([`/api/businesses/${business?.id}/agents`], (old = []) => {
+        return [...old, data];
+      });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     },
