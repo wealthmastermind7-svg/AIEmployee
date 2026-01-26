@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, ScrollView, Pressable, FlatList, ActivityIndicator, Alert, TextInput } from "react-native";
+import { StyleSheet, View, ScrollView, Pressable, FlatList, ActivityIndicator, Alert, TextInput, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
@@ -12,13 +12,14 @@ import Animated, {
   FadeIn,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { GlassCard } from "@/components/GlassCard";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useBusiness } from "@/contexts/BusinessContext";
+import { apiRequest } from "@/lib/query-client";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -145,13 +146,38 @@ export default function InboxScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isNewConvoModalVisible, setIsNewConvoModalVisible] = useState(false);
+  const [newContactName, setNewContactName] = useState("");
+  const [newContactPhone, setNewContactPhone] = useState("");
+  const [newContactEmail, setNewContactEmail] = useState("");
+  const [selectedChannel, setSelectedChannel] = useState<string>("webchat");
 
-  const { data: apiConversations = [], isLoading } = useQuery<ApiConversation[]>({
+  const queryClient = useQueryClient();
+
+  const { data: apiConversations = [], isLoading, refetch } = useQuery<ApiConversation[]>({
     queryKey: ["/api/businesses", business?.id, "conversations"],
     enabled: !!business?.id,
   });
 
   const conversations = apiConversations.map(mapApiConversation);
+
+  const createConversationMutation = useMutation({
+    mutationFn: async (data: { channel: string; contactName?: string; contactPhone?: string; contactEmail?: string }) => {
+      const res = await apiRequest("POST", `/api/businesses/${business?.id}/conversations`, data);
+      return res.json();
+    },
+    onSuccess: (newConversation) => {
+      refetch();
+      setIsNewConvoModalVisible(false);
+      setNewContactName("");
+      setNewContactPhone("");
+      setNewContactEmail("");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigation.navigate("ConversationDetail", { conversationId: newConversation.id });
+    },
+    onError: () => {
+      Alert.alert("Error", "Failed to create conversation. Please try again.");
+    },
+  });
 
   const fabScale = useSharedValue(1);
   const fabStyle = useAnimatedStyle(() => ({
@@ -163,15 +189,20 @@ export default function InboxScreen() {
     fabScale.value = withSpring(0.9, {}, () => {
       fabScale.value = withSpring(1);
     });
-    Alert.alert(
-      "New Conversation",
-      "Start a new conversation with a customer.",
-      [
-        { text: "SMS", onPress: () => {} },
-        { text: "Email", onPress: () => {} },
-        { text: "Cancel", style: "cancel" }
-      ]
-    );
+    setIsNewConvoModalVisible(true);
+  };
+
+  const handleCreateConversation = () => {
+    if (!newContactName.trim() && !newContactPhone.trim() && !newContactEmail.trim()) {
+      Alert.alert("Missing Info", "Please enter at least a name, phone, or email for the contact.");
+      return;
+    }
+    createConversationMutation.mutate({
+      channel: selectedChannel,
+      contactName: newContactName.trim() || undefined,
+      contactPhone: newContactPhone.trim() || undefined,
+      contactEmail: newContactEmail.trim() || undefined,
+    });
   };
 
   const handleProfilePress = () => {
@@ -395,6 +426,125 @@ export default function InboxScreen() {
       >
         <Feather name="edit-2" size={22} color={theme.text} />
       </AnimatedPressable>
+
+      <Modal
+        visible={isNewConvoModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsNewConvoModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <Animated.View entering={FadeIn} style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <ThemedText type="h3">New Conversation</ThemedText>
+              <Pressable onPress={() => setIsNewConvoModalVisible(false)} style={styles.closeButton}>
+                <Feather name="x" size={24} color={theme.text} />
+              </Pressable>
+            </View>
+
+            <View style={styles.channelSelector}>
+              <ThemedText type="label" style={{ marginBottom: Spacing.sm }}>Channel</ThemedText>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.channelOptions}>
+                {[
+                  { key: "webchat", label: "Chat", icon: "message-square" },
+                  { key: "sms", label: "SMS", icon: "message-circle" },
+                  { key: "email", label: "Email", icon: "mail" },
+                  { key: "phone", label: "Phone", icon: "phone" },
+                ].map((ch) => (
+                  <Pressable
+                    key={ch.key}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setSelectedChannel(ch.key);
+                    }}
+                    style={[
+                      styles.channelOption,
+                      selectedChannel === ch.key && styles.channelOptionActive,
+                    ]}
+                  >
+                    <Feather 
+                      name={ch.icon as any} 
+                      size={18} 
+                      color={selectedChannel === ch.key ? theme.text : theme.textSecondary} 
+                    />
+                    <ThemedText 
+                      type="small" 
+                      style={{ 
+                        color: selectedChannel === ch.key ? theme.text : theme.textSecondary,
+                        marginLeft: 6,
+                      }}
+                    >
+                      {ch.label}
+                    </ThemedText>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <ThemedText type="label" style={{ marginBottom: Spacing.xs }}>Contact Name</ThemedText>
+              <View style={styles.modalInputWrapper}>
+                <Feather name="user" size={18} color={theme.textTertiary} />
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Enter name..."
+                  placeholderTextColor={theme.textTertiary}
+                  value={newContactName}
+                  onChangeText={setNewContactName}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <ThemedText type="label" style={{ marginBottom: Spacing.xs }}>Phone Number</ThemedText>
+              <View style={styles.modalInputWrapper}>
+                <Feather name="phone" size={18} color={theme.textTertiary} />
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="+1 234 567 8900"
+                  placeholderTextColor={theme.textTertiary}
+                  value={newContactPhone}
+                  onChangeText={setNewContactPhone}
+                  keyboardType="phone-pad"
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <ThemedText type="label" style={{ marginBottom: Spacing.xs }}>Email Address</ThemedText>
+              <View style={styles.modalInputWrapper}>
+                <Feather name="mail" size={18} color={theme.textTertiary} />
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="email@example.com"
+                  placeholderTextColor={theme.textTertiary}
+                  value={newContactEmail}
+                  onChangeText={setNewContactEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+            </View>
+
+            <Pressable
+              onPress={handleCreateConversation}
+              disabled={createConversationMutation.isPending}
+              style={[styles.createButton, createConversationMutation.isPending && { opacity: 0.6 }]}
+            >
+              {createConversationMutation.isPending ? (
+                <ActivityIndicator size="small" color={theme.text} />
+              ) : (
+                <>
+                  <Feather name="plus" size={20} color={theme.text} />
+                  <ThemedText type="body" style={{ color: theme.text, fontWeight: "600", marginLeft: Spacing.sm }}>
+                    Start Conversation
+                  </ThemedText>
+                </>
+              )}
+            </Pressable>
+          </Animated.View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -560,5 +710,77 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: Spacing["2xl"],
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: Colors.dark.backgroundRoot,
+    borderTopLeftRadius: BorderRadius["2xl"],
+    borderTopRightRadius: BorderRadius["2xl"],
+    padding: Spacing["2xl"],
+    paddingBottom: Spacing["3xl"],
+    borderWidth: 1,
+    borderColor: Colors.dark.glassBorder,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.xl,
+  },
+  closeButton: {
+    padding: Spacing.sm,
+  },
+  channelSelector: {
+    marginBottom: Spacing.xl,
+  },
+  channelOptions: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  channelOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  channelOptionActive: {
+    backgroundColor: Colors.dark.primary,
+    borderColor: Colors.dark.primary,
+  },
+  inputGroup: {
+    marginBottom: Spacing.lg,
+  },
+  modalInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    height: 48,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  modalInput: {
+    flex: 1,
+    color: Colors.dark.text,
+    marginLeft: Spacing.sm,
+    fontSize: 16,
+  },
+  createButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.dark.primary,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    marginTop: Spacing.lg,
   },
 });
