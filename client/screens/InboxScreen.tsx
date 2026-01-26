@@ -108,17 +108,8 @@ const getChannelIcon = (channel: Conversation["channel"]): keyof typeof Feather.
   switch (channel) {
     case "phone":
       return "phone";
-    case "sms":
-      return "message-circle";
-    case "chat":
-    case "webchat":
-      return "message-square";
-    case "instagram":
-      return "instagram";
-    case "email":
-      return "mail";
     default:
-      return "message-square";
+      return "phone";
   }
 };
 
