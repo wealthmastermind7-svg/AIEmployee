@@ -47,7 +47,20 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
     try {
       const savedBusiness = await AsyncStorage.getItem(BUSINESS_STORAGE_KEY);
       if (savedBusiness) {
-        setBusiness(JSON.parse(savedBusiness));
+        const parsed = JSON.parse(savedBusiness);
+        setBusiness(parsed);
+        
+        // Refresh business data from server to ensure it's up to date
+        try {
+          const response = await apiRequest("GET", `/api/businesses/${parsed.id}`);
+          if (response.ok) {
+            const freshBusiness = await response.json();
+            setBusiness(freshBusiness);
+            await AsyncStorage.setItem(BUSINESS_STORAGE_KEY, JSON.stringify(freshBusiness));
+          }
+        } catch (refreshError) {
+          console.error("Failed to refresh business data:", refreshError);
+        }
       }
     } catch (error) {
       console.error("Failed to load saved business:", error);
