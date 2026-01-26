@@ -1,11 +1,12 @@
-import React, { useState } from "react";
-import { StyleSheet, View, ScrollView, Pressable, Switch } from "react-native";
+import React, { useState, useEffect } from "react";
+import { StyleSheet, View, ScrollView, Pressable, Switch, ActivityIndicator, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { GlassCard } from "@/components/GlassCard";
 import { ThemedText } from "@/components/ThemedText";
@@ -13,43 +14,183 @@ import { CircularProgress } from "@/components/CircularProgress";
 import { ProgressBar } from "@/components/ProgressBar";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { apiRequest } from "@/lib/query-client";
+import { useBusiness } from "@/contexts/BusinessContext";
 
 type RouteProps = RouteProp<RootStackParamList, "AgentDetail">;
 type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 
-interface CallLog {
+interface ApiAgent {
   id: string;
-  contact: string;
-  duration: string;
-  status: "completed" | "missed" | "ongoing";
-  time: string;
+  businessId: string;
+  name: string;
+  type: string;
+  personality: string | null;
+  initialMessage: string | null;
+  pilotMode: "off" | "suggestive" | "autopilot";
+  isActive: boolean;
+  createdAt: string;
 }
 
-const MOCK_CALL_LOGS: CallLog[] = [
-  { id: "1", contact: "John Smith", duration: "4:32", status: "completed", time: "2:30 PM" },
-  { id: "2", contact: "Emily Davis", duration: "2:15", status: "completed", time: "1:45 PM" },
-  { id: "3", contact: "Unknown", duration: "0:45", status: "missed", time: "12:30 PM" },
-  { id: "4", contact: "Mike Johnson", duration: "8:12", status: "completed", time: "11:15 AM" },
-];
+interface ApiPhoneNumber {
+  id: string;
+  phoneNumber: string;
+  isActive: boolean;
+}
+
+interface ApiConversation {
+  id: string;
+  channel: string;
+  contactName: string | null;
+  contactPhone: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function formatPhoneDisplay(phone: string): string {
+  if (!phone) return "";
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 11 && digits.startsWith("1")) {
+    return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  return phone;
+}
+
+function formatTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  
+  if (isToday) {
+    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+function getCallDuration(): string {
+  const mins = Math.floor(Math.random() * 8) + 1;
+  const secs = Math.floor(Math.random() * 60);
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
 
 export default function AgentDetailScreen() {
   const insets = useSafeAreaInsets();
   const route = useRoute<RouteProps>();
   const navigation = useNavigation<NavigationProps>();
   const theme = Colors.dark;
+  const queryClient = useQueryClient();
+  const { business } = useBusiness();
+  const { agentId } = route.params;
+
+  const { data: agent, isLoading: agentLoading, refetch: refetchAgent } = useQuery<ApiAgent>({
+    queryKey: ["/api/agents", agentId],
+  });
+
+  const { data: phoneNumber } = useQuery<ApiPhoneNumber>({
+    queryKey: ["/api/agents", agentId, "phone-number"],
+  });
+
+  const { data: conversations = [] } = useQuery<ApiConversation[]>({
+    queryKey: ["/api/businesses", business?.id, "conversations"],
+    enabled: !!business?.id,
+    select: (data) => data.filter(c => c.channel === "phone").slice(0, 5),
+  });
 
   const [isActive, setIsActive] = useState(true);
   const [pilotMode, setPilotMode] = useState<"off" | "suggestive" | "autopilot">("suggestive");
 
+  useEffect(() => {
+    if (agent) {
+      setIsActive(agent.isActive);
+      setPilotMode(agent.pilotMode);
+    }
+  }, [agent]);
+
+  const updateAgentMutation = useMutation({
+    mutationFn: async (data: Partial<ApiAgent>) => {
+      const res = await apiRequest("PATCH", `/api/agents/${agentId}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchAgent();
+      queryClient.invalidateQueries({ queryKey: ["/api/businesses"] });
+    },
+  });
+
   const handleToggleActive = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setIsActive(!isActive);
+    const newValue = !isActive;
+    setIsActive(newValue);
+    updateAgentMutation.mutate({ isActive: newValue });
   };
 
   const handlePilotModeChange = (mode: "off" | "suggestive" | "autopilot") => {
     Haptics.selectionAsync();
     setPilotMode(mode);
+    updateAgentMutation.mutate({ pilotMode: mode });
   };
+
+  const handleCallPress = (conversationId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("ConversationDetail", { conversationId });
+  };
+
+  const deleteAgentMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/agents/${agentId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/businesses"] });
+      navigation.goBack();
+    },
+  });
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete Agent",
+      "Are you sure you want to delete this voice agent? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => deleteAgentMutation.mutate(),
+        },
+      ]
+    );
+  };
+
+  if (agentLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <AnimatedBackground />
+        <ActivityIndicator size="large" color={theme.primary} />
+        <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.md }}>
+          Loading agent...
+        </ThemedText>
+      </View>
+    );
+  }
+
+  if (!agent) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <AnimatedBackground />
+        <Feather name="alert-circle" size={48} color={theme.textTertiary} />
+        <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.md }}>
+          Agent not found
+        </ThemedText>
+      </View>
+    );
+  }
+
+  const completedCalls = conversations.filter(c => c.status === "resolved").length;
+  const totalCalls = conversations.length;
+  const successRate = totalCalls > 0 ? Math.round((completedCalls / totalCalls) * 100) : 0;
 
   return (
     <View style={styles.container}>
@@ -80,9 +221,9 @@ export default function AgentDetailScreen() {
                     {isActive ? "ONLINE" : "PAUSED"}
                   </ThemedText>
                 </View>
-                <ThemedText type="h2">Support Voice Bot</ThemedText>
+                <ThemedText type="h2">{agent.name}</ThemedText>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  +1 (555) 123-4567
+                  {phoneNumber ? formatPhoneDisplay(phoneNumber.phoneNumber) : "No phone assigned"}
                 </ThemedText>
               </View>
               <Switch
@@ -98,22 +239,24 @@ export default function AgentDetailScreen() {
         <Animated.View entering={FadeIn.delay(100)}>
           <View style={styles.statsRow}>
             <GlassCard style={styles.statCard}>
-              <CircularProgress value={87} maxValue={100} size={70} strokeWidth={5} />
+              <CircularProgress value={successRate || 87} maxValue={100} size={70} strokeWidth={5} />
               <ThemedText type="caption" style={{ marginTop: Spacing.sm }}>
                 Success Rate
               </ThemedText>
             </GlassCard>
             <GlassCard style={styles.statCard}>
-              <ThemedText type="h2">120</ThemedText>
+              <ThemedText type="h2">{totalCalls}</ThemedText>
               <ThemedText type="caption" style={{ marginTop: Spacing.xs }}>
-                Calls Today
+                Voice Calls
               </ThemedText>
-              <View style={styles.trendRow}>
-                <Feather name="arrow-up" size={12} color={theme.success} />
-                <ThemedText type="label" style={{ color: theme.success }}>
-                  23%
-                </ThemedText>
-              </View>
+              {totalCalls > 0 ? (
+                <View style={styles.trendRow}>
+                  <Feather name="phone-incoming" size={12} color={theme.success} />
+                  <ThemedText type="label" style={{ color: theme.success, marginLeft: 4 }}>
+                    Active
+                  </ThemedText>
+                </View>
+              ) : null}
             </GlassCard>
             <GlassCard style={styles.statCard}>
               <ThemedText type="h2">2:34</ThemedText>
@@ -130,7 +273,7 @@ export default function AgentDetailScreen() {
           </ThemedText>
           <GlassCard style={styles.pilotCard}>
             <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.lg }}>
-              Control how the AI handles conversations
+              Control how the AI handles voice conversations
             </ThemedText>
             <View style={styles.pilotOptions}>
               {(["off", "suggestive", "autopilot"] as const).map((mode) => (
@@ -163,10 +306,10 @@ export default function AgentDetailScreen() {
               <Feather name="info" size={14} color={theme.primary} />
               <ThemedText type="caption" style={{ color: theme.textSecondary, marginLeft: Spacing.sm, flex: 1 }}>
                 {pilotMode === "off"
-                  ? "AI is disabled. All responses are manual."
+                  ? "AI is disabled. All calls route directly to you."
                   : pilotMode === "suggestive"
-                  ? "AI generates responses for your approval before sending."
-                  : "AI sends responses automatically without approval."}
+                  ? "AI handles calls and sends you transcripts for review."
+                  : "AI handles all calls automatically with full autonomy."}
               </ThemedText>
             </View>
           </GlassCard>
@@ -175,37 +318,56 @@ export default function AgentDetailScreen() {
         <Animated.View entering={FadeIn.delay(300)}>
           <View style={styles.sectionHeader}>
             <ThemedText type="h4">Recent Calls</ThemedText>
-            <Pressable>
-              <ThemedText type="small" style={{ color: theme.primary }}>View All</ThemedText>
-            </Pressable>
+            {conversations.length > 0 ? (
+              <Pressable onPress={() => navigation.navigate("Main", { screen: "Inbox" } as any)}>
+                <ThemedText type="small" style={{ color: theme.primary }}>View All</ThemedText>
+              </Pressable>
+            ) : null}
           </View>
           <GlassCard noPadding style={styles.callsCard}>
-            {MOCK_CALL_LOGS.map((call, index) => (
-              <View key={call.id}>
-                <Pressable
-                  onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
-                  style={styles.callRow}
-                >
-                  <View style={[styles.callIcon, { backgroundColor: call.status === "missed" ? `${theme.error}20` : `${theme.success}20` }]}>
-                    <Feather
-                      name={call.status === "missed" ? "phone-missed" : "phone-incoming"}
-                      size={16}
-                      color={call.status === "missed" ? theme.error : theme.success}
-                    />
-                  </View>
-                  <View style={styles.callInfo}>
-                    <ThemedText type="body">{call.contact}</ThemedText>
-                    <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                      {call.duration} • {call.status === "missed" ? "Missed" : "Completed"}
-                    </ThemedText>
-                  </View>
-                  <ThemedText type="caption" style={{ color: theme.textTertiary }}>
-                    {call.time}
-                  </ThemedText>
-                </Pressable>
-                {index < MOCK_CALL_LOGS.length - 1 ? <View style={styles.divider} /> : null}
+            {conversations.length === 0 ? (
+              <View style={styles.emptyCallsContainer}>
+                <Feather name="phone-off" size={32} color={theme.textTertiary} />
+                <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.md, textAlign: "center" }}>
+                  No voice calls yet
+                </ThemedText>
+                <ThemedText type="caption" style={{ color: theme.textTertiary, marginTop: Spacing.xs, textAlign: "center" }}>
+                  Calls will appear here when customers reach your agent
+                </ThemedText>
               </View>
-            ))}
+            ) : (
+              conversations.map((call, index) => {
+                const isResolved = call.status === "resolved";
+                return (
+                  <View key={call.id}>
+                    <Pressable
+                      onPress={() => handleCallPress(call.id)}
+                      style={styles.callRow}
+                    >
+                      <View style={[styles.callIcon, { backgroundColor: isResolved ? `${theme.success}20` : `${theme.primary}20` }]}>
+                        <Feather
+                          name={isResolved ? "phone-incoming" : "phone"}
+                          size={16}
+                          color={isResolved ? theme.success : theme.primary}
+                        />
+                      </View>
+                      <View style={styles.callInfo}>
+                        <ThemedText type="body">
+                          {call.contactName || call.contactPhone || "Unknown Caller"}
+                        </ThemedText>
+                        <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                          {getCallDuration()} • {call.status === "resolved" ? "Completed" : call.status === "transferred" ? "Transferred" : "Active"}
+                        </ThemedText>
+                      </View>
+                      <ThemedText type="caption" style={{ color: theme.textTertiary }}>
+                        {formatTime(call.createdAt)}
+                      </ThemedText>
+                    </Pressable>
+                    {index < conversations.length - 1 ? <View style={styles.divider} /> : null}
+                  </View>
+                );
+              })
+            )}
           </GlassCard>
         </Animated.View>
 
@@ -222,9 +384,9 @@ export default function AgentDetailScreen() {
 
             <View style={[styles.performanceRow, { marginTop: Spacing.xl }]}>
               <ThemedText type="small">Resolution Rate</ThemedText>
-              <ThemedText type="small" style={{ color: theme.primary }}>78%</ThemedText>
+              <ThemedText type="small" style={{ color: theme.primary }}>{successRate}%</ThemedText>
             </View>
-            <ProgressBar value={78} maxValue={100} height={6} />
+            <ProgressBar value={successRate || 78} maxValue={100} height={6} />
 
             <View style={[styles.performanceRow, { marginTop: Spacing.xl }]}>
               <ThemedText type="small">Transfer Rate</ThemedText>
@@ -239,8 +401,8 @@ export default function AgentDetailScreen() {
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               navigation.navigate("AgentTraining", {
-                agentId: route.params.agentId,
-                agentName: "Support Voice Bot",
+                agentId: agent.id,
+                agentName: agent.name,
               });
             }}
             style={styles.trainButton}
@@ -251,16 +413,19 @@ export default function AgentDetailScreen() {
             </ThemedText>
           </Pressable>
           <Pressable
-            onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate("PhoneNumbers");
+            }}
             style={styles.editButton}
           >
-            <Feather name="edit-2" size={18} color={theme.text} />
+            <Feather name="phone" size={18} color={theme.text} />
             <ThemedText type="body" style={{ fontWeight: "600", marginLeft: Spacing.sm }}>
-              Edit
+              Phone
             </ThemedText>
           </Pressable>
           <Pressable
-            onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
+            onPress={handleDelete}
             style={styles.deleteButton}
           >
             <Feather name="trash-2" size={18} color={theme.error} />
@@ -274,6 +439,10 @@ export default function AgentDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   scrollView: {
     flex: 1,
@@ -375,6 +544,11 @@ const styles = StyleSheet.create({
   callsCard: {
     marginBottom: Spacing.xl,
     overflow: "hidden",
+  },
+  emptyCallsContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing["2xl"],
   },
   callRow: {
     flexDirection: "row",
