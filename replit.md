@@ -68,6 +68,11 @@ Preferred communication style: Simple, everyday language.
 - **Fonts**: Google Fonts (Inter family via web CDN in design specs)
 - **Icons**: Expo Vector Icons (Feather icon set)
 
+### Phone Number Options
+- **Twilio Numbers**: Purchase directly in-app, webhooks auto-configured
+- **Bring Your Own Number (BYON)**: Add existing Twilio numbers (auto-configured) or personal numbers (require call forwarding setup)
+- **Call Forwarding**: For personal/carrier numbers, users forward calls to a WorkMate Twilio number
+
 ### Development Environment
 - **EXPO_PUBLIC_DOMAIN**: Required for API URL configuration
 - **REPLIT_DEV_DOMAIN**: Used for development server proxying

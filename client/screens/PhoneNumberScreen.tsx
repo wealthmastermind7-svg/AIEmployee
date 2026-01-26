@@ -331,6 +331,15 @@ export function PhoneNumberScreen({ navigation }: Props) {
               )}
             </Pressable>
           </View>
+          <GlassCard style={{ padding: Spacing.md, marginTop: Spacing.sm }}>
+            <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+              <Feather name="info" size={16} color={theme.primary} style={{ marginRight: Spacing.sm, marginTop: 2 }} />
+              <ThemedText type="small" style={{ color: theme.textSecondary, flex: 1 }}>
+                <ThemedText type="small" style={{ fontWeight: "600", color: theme.text }}>Using your own number?</ThemedText>
+                {"\n"}If this number is registered in your Twilio account, it will be configured automatically. For personal numbers, set up call forwarding to a WorkMate number.
+              </ThemedText>
+            </View>
+          </GlassCard>
         </View>
 
         <View style={styles.section}>
