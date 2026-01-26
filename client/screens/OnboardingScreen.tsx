@@ -7,6 +7,7 @@ import {
   Platform,
   ScrollView,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -63,13 +64,19 @@ export default function OnboardingScreen() {
   const handleComplete = async () => {
     if (isCreating) return;
     setIsCreating(true);
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     try {
       await createBusiness("My Workspace");
       if (Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } catch (error) {
-      console.error(error);
+      console.error("Failed to create business:", error);
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
     } finally {
       setIsCreating(false);
     }
@@ -239,9 +246,14 @@ export default function OnboardingScreen() {
       <View style={[styles.bottomActions, { paddingBottom: insets.bottom + Spacing.xl }]}>
         <Pressable
           onPress={handleComplete}
-          style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
+          disabled={isCreating}
+          style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed, isCreating && { opacity: 0.7 }]}
         >
-          <ThemedText style={styles.buttonText}>Get Started</ThemedText>
+          {isCreating ? (
+            <ActivityIndicator size="small" color={theme.text} />
+          ) : (
+            <ThemedText style={styles.buttonText}>Get Started</ThemedText>
+          )}
         </Pressable>
       </View>
     </View>
@@ -342,43 +354,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  painCard: {
-    alignItems: "center",
-    width: "100%",
-  },
   iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(255, 255, 255, 0.15)",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: Spacing.xl,
-  },
-  glassIcon: {
-    width: 48,
-    height: 48,
+    ...Shadows.glow,
   },
   gradientTitle: {
-    fontSize: 32,
-    fontWeight: "800",
+    fontSize: 36,
+    fontWeight: "900",
     textAlign: "center",
     marginBottom: Spacing.md,
     color: Colors.dark.text,
-  },
-  description: {
-    textAlign: "center",
-    opacity: 0.8,
-    lineHeight: 24,
-    maxWidth: 300,
-  },
-  painIllustration: {
-    width: SCREEN_WIDTH - 80,
-    height: 200,
-    borderRadius: 24,
-    marginTop: Spacing["2xl"],
+    letterSpacing: -1,
   },
   bottomActions: {
     alignItems: "center",
