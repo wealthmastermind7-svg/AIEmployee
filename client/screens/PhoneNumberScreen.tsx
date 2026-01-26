@@ -271,12 +271,12 @@ export function PhoneNumberScreen({ navigation }: Props) {
             Add Existing Number
           </ThemedText>
           <ThemedText type="body" style={{ color: theme.textSecondary, marginBottom: Spacing.md }}>
-            Already have a phone number? Enter it below to link it to an agent.
+            Already have a phone number (including international like NZ +64)? Enter it below to link it to an agent.
           </ThemedText>
           <View style={styles.searchRow}>
             <TextInput
               style={styles.input}
-              placeholder="+1 (555) 123-4567"
+              placeholder="+64 21 000 0000"
               placeholderTextColor={theme.textSecondary}
               value={existingNumber}
               onChangeText={setExistingNumber}
