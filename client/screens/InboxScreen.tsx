@@ -219,11 +219,10 @@ export default function InboxScreen() {
     <Animated.View entering={FadeIn.delay(index * 50)}>
       <GlassCard
         onPress={() => handleConversationPress(item)}
-        style={
-          item.status === "transferred" 
-            ? [styles.conversationCard, styles.transferredCard] 
-            : styles.conversationCard
-        }
+        style={[
+          styles.conversationCard,
+          item.status === "transferred" && styles.transferredCard,
+        ].filter(Boolean) as any}
       >
         <View style={styles.conversationContent}>
           <View style={styles.avatarContainer}>
