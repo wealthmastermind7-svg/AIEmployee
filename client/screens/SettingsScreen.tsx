@@ -17,6 +17,8 @@ import { apiRequest, queryClient } from "@/lib/query-client";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { MainTabParamList } from "@/navigation/MainTabNavigator";
 
+import { Business } from "@/contexts/BusinessContext";
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList & MainTabParamList>;
 
 interface SettingItemProps {
@@ -93,18 +95,20 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
-  const { business, logout } = useBusiness();
+  const { business, logout, updateBusinessState } = useBusiness();
   const theme = Colors.dark;
 
   const [pushNotifications, setPushNotifications] = useState(business?.notificationsEnabled ?? true);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
 
   const updateBusinessMutation = useMutation({
-    mutationFn: async (updates: Partial<typeof business>) => {
+    mutationFn: async (updates: Partial<Business>) => {
       const res = await apiRequest("PATCH", `/api/businesses/${business?.id}`, updates);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      updateBusinessState(data);
+      queryClient.invalidateQueries({ queryKey: ["/api/businesses", business?.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/me"] });
     },
   });
@@ -221,39 +225,27 @@ export default function SettingsScreen() {
               title="Business Profile"
               subtitle={business?.name || "Setup your business"}
               onPress={() => {
-                Alert.alert(
-                  "Update Business Profile",
-                  "Enter your business name",
-                  [
-                    { text: "Cancel", style: "cancel" },
-                    { 
-                      text: "Update", 
-                      onPress: () => {
-                        // In a real app we'd use a text input in a modal
-                        // Alert.prompt is not available on web
-                      } 
-                    }
-                  ]
-                );
-              }}
-            />
-            <View style={styles.divider} />
-            <SettingItem
-              icon="globe"
-              iconColor="#8b5cf6"
-              title="Language & Region"
-              value="English (US)"
-              onPress={() => {
-                Alert.alert(
-                  "Language & Region",
-                  "Select your preferred language",
-                  [
-                    { text: "English (US)", onPress: () => {} },
-                    { text: "Spanish", onPress: () => {} },
-                    { text: "French", onPress: () => {} },
-                    { text: "Cancel", style: "cancel" }
-                  ]
-                );
+                if (Platform.OS === "ios") {
+                  Alert.prompt(
+                    "Update Business Profile",
+                    "Enter your business name",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      { 
+                        text: "Update", 
+                        onPress: (name?: string) => {
+                          if (name?.trim()) {
+                            updateBusinessMutation.mutate({ name: name.trim() });
+                          }
+                        } 
+                      }
+                    ],
+                    "plain-text",
+                    business?.name || ""
+                  );
+                } else {
+                  Alert.alert("Notice", "Profile updates are coming to Android soon. Please use iOS or contact support.");
+                }
               }}
             />
           </GlassCard>

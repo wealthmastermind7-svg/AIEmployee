@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiRequest } from "@/lib/query-client";
 
-interface Business {
+export interface Business {
   id: string;
   name: string;
   slug: string;
@@ -13,6 +13,7 @@ interface Business {
   subscriptionTier: string;
   aiCreditsRemaining: number;
   notificationsEnabled: boolean;
+  metadata?: any;
   createdAt: string;
 }
 
@@ -21,6 +22,7 @@ interface BusinessContextType {
   isLoading: boolean;
   isOnboarded: boolean;
   createBusiness: (name: string, email?: string) => Promise<Business>;
+  updateBusinessState: (updatedBusiness: Business) => void;
   logout: () => Promise<void>;
 }
 
@@ -31,6 +33,11 @@ const BUSINESS_STORAGE_KEY = "@ai_employee_business";
 export function BusinessProvider({ children }: { children: ReactNode }) {
   const [business, setBusiness] = useState<Business | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const updateBusinessState = (updatedBusiness: Business) => {
+    setBusiness(updatedBusiness);
+    AsyncStorage.setItem(BUSINESS_STORAGE_KEY, JSON.stringify(updatedBusiness));
+  };
 
   useEffect(() => {
     loadSavedBusiness();
@@ -69,6 +76,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
         isLoading,
         isOnboarded: !!business,
         createBusiness,
+        updateBusinessState,
         logout,
       }}
     >
