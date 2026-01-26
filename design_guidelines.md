@@ -1,133 +1,147 @@
 # WorkMate AI Agent - Design Guidelines
 
-## Design Philosophy
-Create a **premium, cinematic experience** with handcrafted animations, oversized typography, and liquid glass aesthetics. Every interaction should feel polished with smooth transitions and subtle parallax effects that convey sophistication and cutting-edge AI technology.
+## Brand Identity
+WorkMate is a **premium AI assistant** that exudes sophistication through **cinematic liquid glass aesthetics**. The memorable element is the **animated gradient orbs** that create a living, breathing background—conveying AI intelligence in constant motion. The personality is polished, confident, and cutting-edge.
 
-## Visual Design System
+## Navigation Architecture
+
+**Root Navigation**: Stack-Only (Onboarding) → Tab Navigation (Main App)
+
+**Flow**:
+1. Onboarding Stack (first launch only):
+   - Welcome Screen → Pain Points Screen → Solution Showcase → Get Started
+2. Main App (tab navigation after onboarding):
+   - Home, Agents, Analytics, Profile
+
+Each onboarding screen is a full-screen modal with swipe-to-advance gestures.
+
+## Screen-by-Screen Specifications
+
+### 1. Welcome Screen
+**Purpose**: First impression, set premium tone
+
+**Layout**:
+- Header: None (full-screen canvas)
+- Main content (scrollable: NO):
+  - Top 40%: Animated gradient orbs background with app icon (120px) centered
+  - Middle: "WorkMate" wordmark (64px, weight 900) + tagline "Your AI-Powered Productivity Partner" (18px, weight 500, opacity 0.7)
+  - Bottom 30%: Large "Continue" button (glass panel with primary glow) + "Skip" text link below
+- Safe area insets: top = insets.top + 60px, bottom = insets.bottom + 40px
+
+**Components**: Animated orb background, centered content stack, primary button, text link
+
+### 2. Pain Points Screen
+**Purpose**: Empathize with user struggles (3 rotating cards)
+
+**Layout**:
+- Header: Progress dots (1/3, 2/3, 3/3) centered at top, "Skip" button top-right
+- Main content (scrollable: NO):
+  - Large icon (48px) in glass circle (80px diameter)
+  - Problem headline (32px, weight 800) with gradient text effect
+  - Description (16px, weight 400, opacity 0.8, max-width 300px)
+  - Rotating pain points:
+    1. "Drowning in Messages" - overwhelmed icon
+    2. "Slow to Respond" - clock/timer icon
+    3. "Never Off Duty" - moon/night icon
+- Bottom: Swipe indicator dots + "Next" button
+- Safe area insets: top = insets.top + 24px, bottom = insets.bottom + 40px
+
+**Components**: Glass circle icon container, gradient text, pagination dots, swipe gesture handler
+
+### 3. Solution Showcase Screen
+**Purpose**: Demonstrate WorkMate's core benefits
+
+**Layout**:
+- Header: Transparent, back button (top-left)
+- Main content (scrollable: YES):
+  - Hero: "Meet Your AI Assistant" (48px, weight 900)
+  - 3 feature cards (glass panels, 24px radius):
+    1. "Unified Inbox" - merge icon, "All channels in one place"
+    2. "Instant Responses" - lightning icon, "AI-powered 24/7 replies"
+    3. "Smart Prioritization" - star icon, "Focus on what matters"
+  - Each card: icon (28px), title (20px, weight 700), description (14px)
+- Bottom floating button: "Get Started" (primary, 56px circle width full minus 48px padding)
+- Safe area insets: top = insets.top + 120px, bottom = 80px + 40px (for floating button)
+
+**Components**: Scrollable list, glass feature cards, floating action button with glow
+
+### 4. Get Started Screen
+**Purpose**: Quick setup (name + notification permission)
+
+**Layout**:
+- Header: "Almost There" (28px, weight 700), back button (top-left)
+- Main content (scrollable form: YES):
+  - "What should we call you?" label (16px, weight 600)
+  - Text input (glass panel, 52px height, white text)
+  - "Enable Notifications" section with toggle switch (glass container)
+  - Helper text (12px, opacity 0.6)
+- Bottom: "Continue" button (glass panel, full width minus 48px padding)
+- Safe area insets: top = insets.top + 80px, bottom = insets.bottom + 40px
+
+**Components**: Form with text input, toggle switch, submit button in footer area
+
+## Design System
 
 ### Color Palette
-- **Primary**: #135bec (vibrant blue)
-- **Background Dark**: #101622 (deep navy)
-- **Glass Panel**: rgba(23, 29, 41, 0.6) with 24px blur
-- **Glass Nav**: rgba(16, 22, 34, 0.8) with 20px blur
-- **Orb Colors**: #135bec, #2a3b55, #1a2333
-- **Status Colors**:
-  - Success/Positive: #34d399 (emerald-400)
-  - Alert: #f59e0b
-  - Error: #ef4444
-  - Neutral: rgba(255, 255, 255, 0.6)
+- **Primary**: #135bec (vibrant blue, used for CTAs, active states, glows)
+- **Background**: #101622 (deep navy)
+- **Surface Glass**: rgba(23, 29, 41, 0.6) + blur(24px)
+- **Border**: rgba(255, 255, 255, 0.08)
+- **Text Primary**: #ffffff
+- **Text Secondary**: rgba(255, 255, 255, 0.7)
+- **Text Muted**: rgba(255, 255, 255, 0.5)
+- **Success**: #34d399
+- **Orb Gradients**: #135bec, #2a3b55, #1a2333
 
 ### Typography
-- **Font Family**: Inter (weights: 300, 400, 500, 600, 700, 800, 900)
-- **Large Display**: 48-64px, font-weight: 900, tracking: -0.02em
-- **Revenue/Stats**: 40-48px, font-weight: 900, tracking: -0.03em
-- **Section Headers**: 16-18px, font-weight: 600
-- **Body Text**: 14px, font-weight: 400-500
-- **Labels/Captions**: 10-12px, font-weight: 500, uppercase, tracking: 0.1em, opacity: 0.6
+- **Font**: Inter (system fallback: -apple-system, SF Pro)
+- **Type Scale**:
+  - Display: 48-64px, weight 900, tracking -0.02em
+  - Hero: 32-40px, weight 800, tracking -0.01em
+  - Headline: 20-28px, weight 700
+  - Body: 14-16px, weight 400-500
+  - Caption: 12px, weight 500, uppercase, tracking 0.1em, opacity 0.6
 
-### Glass Morphism Effects
-- **Frosted Glass Cards**:
-  - Background: rgba(23, 29, 41, 0.6)
-  - Backdrop filter: blur(24px)
-  - Border: 1px solid rgba(255, 255, 255, 0.08)
-  - Shadow: 0 8px 32px rgba(0, 0, 0, 0.3)
-- **Navigation Glass**:
-  - Background: rgba(16, 22, 34, 0.8)
-  - Backdrop filter: blur(20px)
-  - Border: 1px solid rgba(255, 255, 255, 0.1)
+### Visual Design
+- **Touchable Feedback**: Scale to 0.98 + subtle glow (primary color, shadowRadius: 10, shadowOpacity: 0.4) on press
+- **Glass Panels**: Use Surface Glass color + blur, 1px border (Border color), 24px radius for large cards, 16px for small
+- **Floating Buttons**: 
+  - shadowOffset: {width: 0, height: 4}
+  - shadowOpacity: 0.3
+  - shadowRadius: 12
+  - shadowColor: #000000
+- **Icons**: Use Feather icons from @expo/vector-icons, 24px standard size, white with 0.6-0.8 opacity
+- **Animated Orbs**: 3 circular gradients (blur 80px, opacity 0.6, sizes 50vw/60vw/40vw) with slow infinite alternating animation (12-15s duration). Position: top-left, right, bottom-left
 
-### Animated Background
-- **Looping Gradient Orbs**: 3 large circular gradients with blur(80px) and 0.6 opacity
-  - Orb 1: #135bec, 50vw size, top-left, 12s animation
-  - Orb 2: #2a3b55, 60vw size, right, 15s animation
-  - Orb 3: #1a2333, 40vw size, bottom-left, 10s animation
-- **Animation**: Blob keyframes with translate + scale (subtle parallax)
-- **Noise Overlay**: 3% opacity texture for depth
+### Component Patterns
+- **Primary Button**: Glass panel background, white text (weight 600), primary glow on press, 52px height, 24px horizontal padding
+- **Text Link**: Primary color, 14px, weight 500, no underline, scale 0.95 on press
+- **Progress Dots**: 8px circles, active = primary color, inactive = rgba(255, 255, 255, 0.3), 8px gap
+- **Input Field**: Glass panel, 52px height, 16px padding, white text, placeholder opacity 0.4
+- **Toggle Switch**: 51px width, 31px height, glass background when off, primary background when on
 
-### Circular Meters & Progress
-- **Meter Circles**: Use conic-gradient for percentage display
-  - Active segment: #135bec with 0-10px glow effect
-  - Inactive: rgba(255, 255, 255, 0.1)
-  - Border: 4px stroke, outer ring rgba(255, 255, 255, 0.05)
-- **Progress Bars**:
-  - Background: rgba(255, 255, 255, 0.1), height: 4-6px, rounded-full
-  - Fill: Gradient (primary to lighter shade) with 0-10px glow
-  - 90%+ fill: Use emerald-400 with glow
+## Assets to Generate
 
-### Icons
-- **System**: Material Symbols Outlined (weights 100-700)
-- **Sizes**: 16px (small), 20-24px (standard), 28-32px (large)
-- **Color**: White with 0.6-0.8 opacity, primary color for active states
+1. **icon.png** - App icon with "W" lettermark on gradient blue background, rounded square
+   - WHERE USED: Device home screen
 
-## Layout & Spacing
+2. **splash-icon.png** - Same "W" lettermark on transparent background
+   - WHERE USED: Launch screen center
 
-### Screen Structure
-- **Top Bar**: 60px height, sticky, glass effect
-- **Content Padding**: 24px horizontal
-- **Card Radius**: 16-24px (larger for hero cards)
-- **Grid Gap**: 16px
-- **Bottom Tab Bar**: 80px + safe area, frosted glass
+3. **onboarding-overwhelmed.png** - Abstract illustration of overlapping message bubbles in primary blue tones
+   - WHERE USED: Pain Points Screen (card 1 background)
 
-### Component Spacing
-- **xl**: 32px (major sections)
-- **lg**: 24px (cards)
-- **md**: 16px (grid gaps)
-- **sm**: 12px (internal padding)
-- **xs**: 8px (tight groups)
+4. **onboarding-clock.png** - Minimalist clock/timer icon in glass style
+   - WHERE USED: Pain Points Screen (card 2 icon)
 
-## Animations & Transitions
+5. **onboarding-moon.png** - Crescent moon with subtle glow
+   - WHERE USED: Pain Points Screen (card 3 icon)
 
-### Timing
-- **Default**: 300-400ms cubic-bezier(0.4, 0, 0.6, 1)
-- **Blob Animation**: 10-15s infinite alternate
-- **Pulse**: 3s cubic-bezier(0.4, 0, 0.6, 1) infinite
-- **Hover/Press**: 200ms ease-out
+6. **feature-inbox.png** - Unified inbox icon (merged channels concept), line art style
+   - WHERE USED: Solution Showcase Screen (feature card 1)
 
-### Effects
-- **Parallax**: Subtle Y-axis movement on scroll (0.3-0.5 factor)
-- **Glow on Interaction**: Drop shadow with primary color, 0-10px blur
-- **Scale on Press**: 0.97-0.98 scale with spring physics
-- **Floating Action**: Gentle Y-axis bounce (2-4px) on idle
-- **Shimmer Loading**: Gradient sweep 1.5s infinite
+7. **feature-lightning.png** - Lightning bolt with AI sparkle, glass effect
+   - WHERE USED: Solution Showcase Screen (feature card 2)
 
-## Component Patterns
-
-### Cards
-- Glass panel with hover state (bg-white/10 on hover)
-- Subtle glow on active/selected states
-- Overflow hidden with gradient overlays
-
-### Status Indicators
-- **Active Dot**: 8px circle, primary color, pulsing animation
-- **Badges**: Rounded-full, border 1px, bg with 0.1 opacity, glow effect
-
-### Charts & Visualizations
-- **Line Charts**: 3px stroke, primary color with 0-10px glow, gradient fill beneath
-- **SVG Animations**: Stagger appearance with 100-200ms delays
-- **Interactive Points**: Pulsing dot at current value
-
-### Buttons
-- **Primary**: Glass panel + primary glow on press, white text
-- **Secondary**: Glass panel, white/60 text
-- **Icon-Only**: 40px circle, glass effect
-- **Floating Action**: 56px circle, primary bg, 0 8px 16px shadow
-
-## Navigation
-
-### Tab Bar
-- Fixed bottom with 80px height + safe area
-- Frosted glass background
-- Icons: 24px with label 10px below
-- Active: Primary color with 2px top border
-- Inactive: White 0.5 opacity
-
-### Header Patterns
-- **Transparent**: Default, blend with background orbs
-- **Title**: Large 28-32px, semi-bold
-- **Actions**: Right-aligned icons in glass circles
-
-## Accessibility
-- **Contrast**: Minimum 4.5:1 for text on glass
-- **Touch Targets**: Minimum 44px
-- **Haptic Feedback**: Light on tap, medium on success, heavy on error
-- **Reduced Motion**: Disable blob animations, use fade transitions only
+8. **feature-star.png** - Star with priority badge
+   - WHERE USED: Solution Showcase Screen (feature card 3)
