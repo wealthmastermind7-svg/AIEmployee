@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View, ScrollView, Pressable, ActivityIndicator } from "react-native";
+import { StyleSheet, View, ScrollView, Pressable, ActivityIndicator, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
@@ -54,6 +54,7 @@ export default function DashboardScreen() {
     notificationScale.value = withSpring(0.9, {}, () => {
       notificationScale.value = withSpring(1);
     });
+    Alert.alert("Notifications", "You have no new notifications.");
   };
 
   const creditsUsed = stats ? 5000 - stats.aiCreditsRemaining : 0;
@@ -192,7 +193,7 @@ export default function DashboardScreen() {
         <View style={styles.statsGrid}>
           <StatCard
             title="Total Agents"
-            value={String(stats?.totalAgents || 0)}
+            value={String(stats?.totalAgents || 1)}
             trend={{ value: "Active", isPositive: true }}
             onPress={() => navigation.navigate("Main", { screen: "Agents" } as any)}
           />
@@ -234,6 +235,267 @@ export default function DashboardScreen() {
               <Feather name="chevron-down" size={14} color={theme.textSecondary} />
             </Pressable>
           </View>
+          <View style={styles.chartContainer}>
+            <View style={styles.chartLine} />
+            <View style={styles.chartBars}>
+              {[40, 55, 70, 60, 85, 75, 90].map((height, index) => (
+                <View key={index} style={styles.barContainer}>
+                  <View
+                    style={[
+                      styles.bar,
+                      {
+                        height: `${height}%`,
+                        backgroundColor: index === 6 ? theme.primary : `${theme.primary}40`,
+                      },
+                    ]}
+                  />
+                </View>
+              ))}
+            </View>
+            <View style={styles.chartLabels}>
+              {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
+                <ThemedText key={index} type="label" style={styles.chartLabel}>
+                  {day}
+                </ThemedText>
+              ))}
+            </View>
+          </View>
+        </GlassCard>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: Spacing["2xl"],
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.lg,
+  },
+  profileContainer: {
+    position: "relative",
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statusDot: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.dark.success,
+    borderWidth: 2,
+    borderColor: Colors.dark.backgroundRoot,
+  },
+  notificationButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  notificationBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(23, 29, 41, 0.6)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.dark.primary,
+  },
+  notificationPulse: {
+    position: "absolute",
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.dark.primary,
+    opacity: 0.5,
+  },
+  greeting: {
+    marginBottom: Spacing.lg,
+  },
+  revenueCard: {
+    marginBottom: Spacing.lg,
+    padding: Spacing["2xl"],
+  },
+  revenueLabel: {
+    marginBottom: Spacing.xs,
+  },
+  revenueRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: Spacing.md,
+  },
+  revenueValue: {
+    color: Colors.dark.text,
+  },
+  trendBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.dark.successBg,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: `${Colors.dark.success}30`,
+    marginBottom: Spacing.sm,
+  },
+  metersRow: {
+    flexDirection: "row",
+    gap: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  meterCard: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing["2xl"],
+    position: "relative",
+  },
+  pulseIndicator: {
+    position: "absolute",
+    top: Spacing.lg,
+    right: Spacing.lg,
+  },
+  pulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  creditsCard: {
+    flex: 1,
+    padding: Spacing.lg,
+  },
+  creditsHeader: {
+    marginBottom: Spacing.sm,
+  },
+  iconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  creditsValue: {
+    marginBottom: 2,
+  },
+  usageBar: {
+    marginTop: Spacing.lg,
+  },
+  usageLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: Spacing.xs,
+  },
+  statsGrid: {
+    flexDirection: "row",
+    gap: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  addCreditsCard: {
+    flex: 1,
+    alignItems: "flex-start",
+    justifyContent: "center",
+    padding: Spacing.lg,
+  },
+  addIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chartCard: {
+    padding: Spacing.xl,
+    marginBottom: Spacing.lg,
+  },
+  chartHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.xl,
+  },
+  chartFilter: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.xs,
+    gap: 4,
+  },
+  chartContainer: {
+    height: 120,
+    position: "relative",
+  },
+  chartLine: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.05)",
+  },
+  chartBars: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    paddingBottom: 24,
+  },
+  barContainer: {
+    flex: 1,
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+  bar: {
+    width: 8,
+    borderRadius: 4,
+    minHeight: 8,
+  },
+  chartLabels: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  chartLabel: {
+    flex: 1,
+    textAlign: "center",
+  },
+});
           <View style={styles.chartContainer}>
             <View style={styles.chartLine} />
             <View style={styles.chartBars}>
