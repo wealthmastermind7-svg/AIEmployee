@@ -141,6 +141,35 @@ export function PhoneNumberScreen({ navigation }: Props) {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (phoneNumberId: string) => {
+      await apiRequest("DELETE", `/api/phone-numbers/${phoneNumberId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/businesses/${businessId}/phone-numbers`] });
+      Alert.alert("Success", "Phone number removed successfully");
+    },
+    onError: () => {
+      Alert.alert("Error", "Failed to remove phone number");
+    },
+  });
+
+  const handleDelete = (number: PhoneNumber) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      "Remove Number",
+      `Are you sure you want to remove ${number.phoneNumber}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Remove", 
+          style: "destructive",
+          onPress: () => deleteMutation.mutate(number.id) 
+        },
+      ]
+    );
+  };
+
   const handleSearch = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     searchMutation.mutate();
@@ -378,17 +407,32 @@ export function PhoneNumberScreen({ navigation }: Props) {
                       {getAssignedAgentName(num.agentId)}
                     </ThemedText>
                   </View>
-                  <Pressable
-                    style={[
-                      styles.actionButton,
-                      num.agentId ? styles.unassignButton : styles.assignButton,
-                    ]}
-                    onPress={() => handleAssign(num)}
-                  >
-                    <ThemedText type="body" style={{ fontWeight: "600" }}>
-                      {num.agentId ? "Change" : "Assign"}
-                    </ThemedText>
-                  </Pressable>
+                  <View style={{ flexDirection: "row", gap: Spacing.sm }}>
+                    {!num.agentId && (
+                      <Pressable
+                        style={[styles.actionButton, { backgroundColor: theme.error + "20" }]}
+                        onPress={() => handleDelete(num)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        {deleteMutation.isPending ? (
+                          <ActivityIndicator color={theme.error} size="small" />
+                        ) : (
+                          <Feather name="trash-2" size={18} color={theme.error} />
+                        )}
+                      </Pressable>
+                    )}
+                    <Pressable
+                      style={[
+                        styles.actionButton,
+                        num.agentId ? styles.unassignButton : styles.assignButton,
+                      ]}
+                      onPress={() => handleAssign(num)}
+                    >
+                      <ThemedText type="body" style={{ fontWeight: "600" }}>
+                        {num.agentId ? "Change" : "Assign"}
+                      </ThemedText>
+                    </Pressable>
+                  </View>
                 </View>
 
                 {selectedNumber?.id === num.id && (

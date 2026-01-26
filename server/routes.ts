@@ -1290,6 +1290,18 @@ Keep responses very concise (1-2 sentences) as this is a voice call.`;
     }
   });
 
+  // Delete phone number
+  app.delete("/api/phone-numbers/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      await db.delete(phoneNumbers).where(eq(phoneNumbers.id, id));
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting phone number:", error);
+      res.status(500).json({ error: "Failed to delete phone number" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
