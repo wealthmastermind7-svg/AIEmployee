@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -7,93 +7,115 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRoute, RouteProp } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/query-client";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { GlassCard } from "@/components/GlassCard";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { Message as ApiMessage, Conversation as ApiConversation } from "@shared/schema";
 
 type RouteProps = RouteProp<RootStackParamList, "ConversationDetail">;
 
-interface Message {
-  id: string;
-  role: "user" | "agent" | "system";
-  content: string;
-  time: string;
+interface Message extends ApiMessage {
   isAI?: boolean;
   isPending?: boolean;
+  time: string;
 }
-
-const MOCK_MESSAGES: Message[] = [
-  {
-    id: "1",
-    role: "user",
-    content: "Hi, I'm interested in scheduling a demo of your AI employee platform.",
-    time: "2:30 PM",
-  },
-  {
-    id: "2",
-    role: "agent",
-    content: "Hello! Thank you for reaching out. I'd be happy to help you schedule a demo. What time works best for you?",
-    time: "2:31 PM",
-    isAI: true,
-  },
-  {
-    id: "3",
-    role: "user",
-    content: "I'm free tomorrow afternoon, around 3 PM EST.",
-    time: "2:32 PM",
-  },
-  {
-    id: "4",
-    role: "agent",
-    content: "Perfect! I've found an available slot for tomorrow at 3:00 PM EST. Would you like me to send you a calendar invite?",
-    time: "2:32 PM",
-    isAI: true,
-  },
-  {
-    id: "5",
-    role: "user",
-    content: "Yes please, that would be great!",
-    time: "2:33 PM",
-  },
-  {
-    id: "6",
-    role: "agent",
-    content: "I'm preparing a calendar invite for you. Could you please confirm your email address?",
-    time: "2:33 PM",
-    isAI: true,
-    isPending: true,
-  },
-];
 
 export default function ConversationDetailScreen() {
   const insets = useSafeAreaInsets();
   const route = useRoute<RouteProps>();
+  const { conversationId } = route.params;
   const theme = Colors.dark;
   const scrollViewRef = useRef<ScrollView>(null);
-  const [message, setMessage] = useState("");
+  const [inputText, setInputText] = useState("");
+  const queryClient = useQueryClient();
+
+  const { data: conversationData, isLoading: isLoadingConv } = useQuery<ApiConversation & { messages: ApiMessage[] }>({
+    queryKey: [`/api/conversations/${conversationId}`],
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (content: string) => {
+      return apiRequest("POST", `/api/conversations/${conversationId}/messages`, {
+        content,
+        role: "user",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/conversations/${conversationId}`] });
+      setInputText("");
+    },
+  });
+
+  const generateAIResponseMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", "/api/ai/generate-response", {
+        conversationId,
+        pilotMode: "suggestive",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/conversations/${conversationId}`] });
+    },
+  });
+
+  const approveResponseMutation = useMutation({
+    mutationFn: async (content: string) => {
+      return apiRequest("POST", "/api/ai/approve-response", {
+        conversationId,
+        content,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/conversations/${conversationId}`] });
+    },
+  });
 
   const handleSend = () => {
-    if (message.trim()) {
+    if (inputText.trim()) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setMessage("");
+      sendMessageMutation.mutate(inputText.trim());
     }
   };
 
-  const handleApprove = () => {
+  const handleApprove = (content: string) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    approveResponseMutation.mutate(content);
   };
 
-  const handleReject = () => {
+  const handleGenerateAI = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    generateAIResponseMutation.mutate();
   };
+
+  const formatTime = (date: string | Date) => {
+    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const messages = conversationData?.messages.map(m => ({
+    ...m,
+    time: formatTime(m.createdAt),
+    isAI: m.role === 'agent',
+    isPending: m.role === 'agent' && !m.wasApproved && m.wasAutoGenerated
+  })) || [];
+
+  if (isLoadingConv) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -101,7 +123,7 @@ export default function ConversationDetailScreen() {
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={100}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <ScrollView
           ref={scrollViewRef}
@@ -119,34 +141,34 @@ export default function ConversationDetailScreen() {
                 <Feather name="user" size={24} color={theme.primary} />
               </View>
               <View style={styles.contactDetails}>
-                <ThemedText type="h4">Sarah Jenkins</ThemedText>
+                <ThemedText type="h4">{conversationData?.contactName || "Contact"}</ThemedText>
                 <View style={styles.channelBadge}>
                   <Feather name="message-square" size={12} color={theme.textSecondary} />
                   <ThemedText type="caption" style={{ color: theme.textSecondary, marginLeft: 4 }}>
-                    Live Chat
+                    {conversationData?.channel}
                   </ThemedText>
                 </View>
               </View>
             </View>
           </View>
 
-          {MOCK_MESSAGES.map((msg, index) => (
+          {messages.map((msg, index) => (
             <Animated.View
               key={msg.id}
               entering={FadeInDown.delay(index * 50)}
               style={[
                 styles.messageRow,
-                msg.role === "agent" ? styles.messageRowAgent : styles.messageRowUser,
+                msg.role === "agent" || msg.role === "assistant" ? styles.messageRowAgent : styles.messageRowUser,
               ]}
             >
-              {msg.role === "agent" ? (
+              {(msg.role === "agent" || msg.role === "assistant") ? (
                 <View style={styles.agentMessage}>
                   <View style={styles.messageHeader}>
-                    {msg.isAI ? (
+                    {msg.wasAutoGenerated ? (
                       <View style={styles.aiBadge}>
                         <Feather name="cpu" size={10} color={theme.primary} />
                         <ThemedText type="label" style={{ color: theme.primary, marginLeft: 4 }}>
-                          AI {msg.isPending ? "DRAFTING" : "SENT"}
+                          AI {msg.isPending ? "DRAFT" : "SENT"}
                         </ThemedText>
                       </View>
                     ) : null}
@@ -159,13 +181,13 @@ export default function ConversationDetailScreen() {
                   </GlassCard>
                   {msg.isPending ? (
                     <View style={styles.pendingActions}>
-                      <Pressable onPress={handleApprove} style={styles.approveButton}>
+                      <Pressable onPress={() => handleApprove(msg.content)} style={styles.approveButton}>
                         <Feather name="check" size={18} color={theme.success} />
                         <ThemedText type="small" style={{ color: theme.success, marginLeft: 4 }}>
                           Approve
                         </ThemedText>
                       </Pressable>
-                      <Pressable onPress={handleReject} style={styles.rejectButton}>
+                      <Pressable style={styles.rejectButton}>
                         <Feather name="edit-2" size={16} color={theme.textSecondary} />
                         <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: 4 }}>
                           Edit
@@ -191,21 +213,32 @@ export default function ConversationDetailScreen() {
         </ScrollView>
 
         <View style={[styles.inputContainer, { paddingBottom: insets.bottom + Spacing.sm }]}>
+          <View style={styles.aiControls}>
+             <Pressable onPress={handleGenerateAI} style={styles.aiButton}>
+               <Feather name="zap" size={16} color={theme.primary} />
+               <ThemedText type="small" style={{ color: theme.primary, marginLeft: 6 }}>Generate AI Draft</ThemedText>
+             </Pressable>
+          </View>
           <GlassCard noPadding style={styles.inputWrapper}>
             <View style={styles.inputRow}>
               <TextInput
                 style={styles.input}
                 placeholder="Type a message..."
                 placeholderTextColor={theme.textTertiary}
-                value={message}
-                onChangeText={setMessage}
+                value={inputText}
+                onChangeText={setInputText}
                 multiline
               />
               <Pressable
                 onPress={handleSend}
-                style={[styles.sendButton, { backgroundColor: message.trim() ? theme.primary : "rgba(255, 255, 255, 0.1)" }]}
+                disabled={sendMessageMutation.isPending}
+                style={[styles.sendButton, { backgroundColor: inputText.trim() ? theme.primary : "rgba(255, 255, 255, 0.1)" }]}
               >
-                <Feather name="send" size={18} color={message.trim() ? theme.text : theme.textTertiary} />
+                {sendMessageMutation.isPending ? (
+                  <ActivityIndicator size="small" color={theme.text} />
+                ) : (
+                  <Feather name="send" size={18} color={inputText.trim() ? theme.text : theme.textTertiary} />
+                )}
               </Pressable>
             </View>
           </GlassCard>
@@ -218,6 +251,10 @@ export default function ConversationDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  center: {
+    justifyContent: "center",
+    alignItems: "center",
   },
   keyboardView: {
     flex: 1,
@@ -327,6 +364,21 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(16, 22, 34, 0.9)",
     borderTopWidth: 1,
     borderTopColor: Colors.dark.glassBorder,
+  },
+  aiControls: {
+    marginBottom: Spacing.sm,
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  aiButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: `${Colors.dark.primary}10`,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: `${Colors.dark.primary}30`,
   },
   inputWrapper: {
     borderRadius: BorderRadius.xl,
