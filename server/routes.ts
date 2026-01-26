@@ -1042,33 +1042,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const twiml = new twilio.twiml.VoiceResponse();
     const { To, From, CallSid } = req.body;
 
-    console.log(`Incoming call from ${From} to ${To} (CallSid: ${CallSid})`);
+    console.log(`[Twilio Webhook] Incoming call from ${From} to ${To} (CallSid: ${CallSid})`);
 
     try {
-      // Find agent associated with this number (try both formatted and clean versions)
-      // Enhanced lookup for international numbers
-      const cleanTo = To.replace(/[^\d+]/g, '');
-      const digitsOnlyTo = To.replace(/\D/g, '');
-      const last10 = digitsOnlyTo.slice(-10);
+      // Normalize numbers for comparison
+      const normalize = (num: string) => {
+        if (!num) return "";
+        // Remove all non-digits
+        let digits = num.replace(/\D/g, "");
+        // Remove leading country code if it exists (assuming US/NZ etc)
+        // This is a bit naive but helps with matching +1 vs 1 vs digits only
+        return digits;
+      };
 
-      console.log(`Incoming call from ${From} to ${To} (Cleaned: ${cleanTo}) (CallSid: ${CallSid})`);
+      const normalizedTo = normalize(To);
+      const last10 = normalizedTo.slice(-10);
 
-      const [num] = await db.select().from(phoneNumbers)
-        .where(sql`${phoneNumbers.phoneNumber} = ${To} 
-          OR ${phoneNumbers.phoneNumber} = ${cleanTo} 
-          OR ${phoneNumbers.phoneNumber} = ${digitsOnlyTo}
-          OR ${phoneNumbers.phoneNumber} = ${'+' + digitsOnlyTo}
-          OR ${phoneNumbers.phoneNumber} = ${To.replace('+1', '')}
-          OR ${phoneNumbers.phoneNumber} LIKE ${'%' + last10}`);
+      console.log(`[Twilio Webhook] Normalized To: ${normalizedTo}, Last10: ${last10}`);
+
+      // List all numbers for debugging
+      const allNumbers = await db.select().from(phoneNumbers);
+      console.log(`[Twilio Webhook] DB Numbers (raw):`, allNumbers.map(n => n.phoneNumber));
+      console.log(`[Twilio Webhook] DB Numbers (normalized):`, allNumbers.map(n => normalize(n.phoneNumber)));
+
+      // Try exact match first, then normalized match, then suffix match
+      let numRecord = allNumbers.find(n => 
+        n.phoneNumber === To || 
+        normalize(n.phoneNumber) === normalizedTo ||
+        (last10.length >= 7 && normalize(n.phoneNumber).endsWith(last10))
+      );
       
       let agent = null;
       let business = null;
 
-      if (num) {
-        [agent] = await db.select().from(agents).where(eq(agents.id, num.agentId!));
-        if (agent) {
-          [business] = await db.select().from(businesses).where(eq(businesses.id, agent.businessId));
+      if (numRecord) {
+        console.log(`[Twilio Webhook] Matched number record:`, numRecord);
+        if (numRecord.agentId) {
+          [agent] = await db.select().from(agents).where(eq(agents.id, numRecord.agentId));
+          console.log(`[Twilio Webhook] Found agent:`, agent?.name);
+          if (agent) {
+            [business] = await db.select().from(businesses).where(eq(businesses.id, agent.businessId));
+            console.log(`[Twilio Webhook] Found business:`, business?.name);
+          }
+        } else {
+          console.log(`[Twilio Webhook] Number matched but no agentId assigned.`);
         }
+      } else {
+        console.log(`[Twilio Webhook] No match found for incoming number ${To}`);
       }
 
       if (!agent || !business) {
