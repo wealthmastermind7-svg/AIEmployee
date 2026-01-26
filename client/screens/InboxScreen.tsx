@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, ScrollView, Pressable, FlatList, ActivityIndicator } from "react-native";
+import { StyleSheet, View, ScrollView, Pressable, FlatList, ActivityIndicator, Alert, TextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
@@ -142,6 +142,10 @@ export default function InboxScreen() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const { business } = useBusiness();
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [isNewConvoModalVisible, setIsNewConvoModalVisible] = useState(false);
+
   const { data: apiConversations = [], isLoading } = useQuery<ApiConversation[]>({
     queryKey: ["/api/businesses", business?.id, "conversations"],
     enabled: !!business?.id,
@@ -159,6 +163,36 @@ export default function InboxScreen() {
     fabScale.value = withSpring(0.9, {}, () => {
       fabScale.value = withSpring(1);
     });
+    Alert.alert(
+      "New Conversation",
+      "Start a new conversation with a customer.",
+      [
+        { text: "SMS", onPress: () => {} },
+        { text: "Email", onPress: () => {} },
+        { text: "Cancel", style: "cancel" }
+      ]
+    );
+  };
+
+  const handleProfilePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert(
+      "Profile Options",
+      "Manage your personal profile and preferences.",
+      [
+        { text: "View Profile", onPress: () => {} },
+        { text: "Settings", onPress: () => navigation.navigate("Main", { screen: "Settings" } as any) },
+        { text: "Cancel", style: "cancel" }
+      ]
+    );
+  };
+
+  const handleSearchPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIsSearchVisible(!isSearchVisible);
+    if (!isSearchVisible) {
+      // In a real app, we'd focus a search input here
+    }
   };
 
   const handleConversationPress = (conversation: Conversation) => {
@@ -172,11 +206,10 @@ export default function InboxScreen() {
   };
 
   const filteredConversations = conversations.filter((conv) => {
-    if (activeFilter === "all") return true;
-    if (activeFilter === "active") return conv.status === "active";
-    if (activeFilter === "transferred") return conv.status === "transferred";
-    if (activeFilter === "resolved") return conv.status === "resolved";
-    return true;
+    const matchesFilter = activeFilter === "all" || conv.status === activeFilter;
+    const matchesSearch = conv.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesFilter && matchesSearch;
   });
 
   const todayConversations = filteredConversations.filter((c) => c.isToday);
@@ -186,10 +219,11 @@ export default function InboxScreen() {
     <Animated.View entering={FadeIn.delay(index * 50)}>
       <GlassCard
         onPress={() => handleConversationPress(item)}
-        style={[
-          styles.conversationCard,
-          item.status === "transferred" ? styles.transferredCard : {},
-        ]}
+        style={
+          item.status === "transferred" 
+            ? [styles.conversationCard, styles.transferredCard] 
+            : styles.conversationCard
+        }
       >
         <View style={styles.conversationContent}>
           <View style={styles.avatarContainer}>
@@ -248,13 +282,29 @@ export default function InboxScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View style={styles.profileButton}>
+          <Pressable onPress={handleProfilePress} style={styles.profileButton}>
             <Feather name="user" size={20} color={theme.text} />
-          </View>
-          <Pressable style={styles.searchButton}>
-            <Feather name="search" size={22} color={theme.text} />
+          </Pressable>
+          <Pressable onPress={handleSearchPress} style={styles.searchButton}>
+            <Feather name={isSearchVisible ? "x" : "search"} size={22} color={theme.text} />
           </Pressable>
         </View>
+
+        {isSearchVisible && (
+          <Animated.View entering={FadeIn} style={styles.searchContainer}>
+            <View style={styles.searchInputWrapper}>
+              <Feather name="search" size={16} color={theme.textTertiary} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search conversations..."
+                placeholderTextColor={theme.textTertiary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoFocus
+              />
+            </View>
+          </Animated.View>
+        )}
 
         <View style={styles.titleSection}>
           <ThemedText type="h1">Inbox</ThemedText>
@@ -381,6 +431,25 @@ const styles = StyleSheet.create({
     height: 44,
     alignItems: "center",
     justifyContent: "center",
+  },
+  searchContainer: {
+    marginBottom: Spacing.lg,
+  },
+  searchInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    height: 44,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  searchInput: {
+    flex: 1,
+    color: Colors.dark.text,
+    marginLeft: Spacing.sm,
+    fontSize: 16,
   },
   titleSection: {
     marginBottom: Spacing.xl,
