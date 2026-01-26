@@ -69,7 +69,7 @@ export default function CreateAgentScreen() {
 
   const [step, setStep] = useState<Step>(1);
   const [agentName, setAgentName] = useState("");
-  const [agentType, setAgentType] = useState<"voice" | "chat" | "sms">("voice");
+  const [agentType, setAgentType] = useState<"voice">("voice");
   const [businessUnit, setBusinessUnit] = useState("");
   const [flow, setFlow] = useState<FlowType>("inbound");
   const [openingLine, setOpeningLine] = useState("");
@@ -169,7 +169,7 @@ export default function CreateAgentScreen() {
             Agent Type
           </ThemedText>
           <View style={styles.flowSelector}>
-            {(["voice", "chat", "sms"] as const).map((t) => (
+            {(["voice"] as const).map((t) => (
               <Pressable
                 key={t}
                 onPress={() => {
@@ -182,7 +182,7 @@ export default function CreateAgentScreen() {
                 ]}
               >
                 <Feather 
-                  name={t === 'voice' ? 'mic' : t === 'chat' ? 'message-square' : 'message-circle'} 
+                  name={t === 'voice' ? 'mic' : 'cpu'} 
                   size={16} 
                   color={agentType === t ? theme.text : theme.textSecondary} 
                 />

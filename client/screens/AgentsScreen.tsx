@@ -23,12 +23,12 @@ import { useBusiness } from "@/contexts/BusinessContext";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-type AgentType = "all" | "voice" | "chat" | "sms";
+type AgentType = "all" | "voice";
 
 interface Agent {
   id: string;
   name: string;
-  type: "voice" | "chat" | "sms";
+  type: "voice";
   isActive: boolean;
   direction: string;
   pilotMode: string;
@@ -38,8 +38,6 @@ interface Agent {
 const FILTERS: { key: AgentType; label: string }[] = [
   { key: "all", label: "All Agents" },
   { key: "voice", label: "Voice" },
-  { key: "chat", label: "Chat" },
-  { key: "sms", label: "SMS" },
 ];
 
 const getAgentIcon = (type: string): keyof typeof Feather.glyphMap => {

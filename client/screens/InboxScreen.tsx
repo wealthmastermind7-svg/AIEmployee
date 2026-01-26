@@ -46,7 +46,7 @@ interface Conversation {
   id: string;
   name: string;
   avatar?: string;
-  channel: "phone" | "sms" | "chat" | "instagram" | "email" | "webchat" | "whatsapp" | "facebook";
+  channel: "phone";
   lastMessage: string;
   time: string;
   status: "active" | "resolved" | "transferred";
@@ -149,7 +149,7 @@ export default function InboxScreen() {
   const [newContactName, setNewContactName] = useState("");
   const [newContactPhone, setNewContactPhone] = useState("");
   const [newContactEmail, setNewContactEmail] = useState("");
-  const [selectedChannel, setSelectedChannel] = useState<string>("webchat");
+  const [selectedChannel, setSelectedChannel] = useState<string>("phone");
 
   const queryClient = useQueryClient();
 
@@ -446,9 +446,6 @@ export default function InboxScreen() {
               <ThemedText type="label" style={{ marginBottom: Spacing.sm }}>Channel</ThemedText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.channelOptions}>
                 {[
-                  { key: "webchat", label: "Chat", icon: "message-square" },
-                  { key: "sms", label: "SMS", icon: "message-circle" },
-                  { key: "email", label: "Email", icon: "mail" },
                   { key: "phone", label: "Phone", icon: "phone" },
                 ].map((ch) => (
                   <Pressable
