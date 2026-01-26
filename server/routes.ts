@@ -712,75 +712,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Crawl website for agent training
+  // Helper function to extract text from HTML
+  function extractTextFromHtml(html: string): string {
+    return html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 50000);
+  }
+
+  // Helper to extract internal links from HTML
+  function extractInternalLinks(html: string, baseUrl: string): string[] {
+    const urlObj = new URL(baseUrl);
+    const domain = urlObj.origin;
+    const links: string[] = [];
+    const linkRegex = /<a[^>]+href=["']([^"']+)["']/gi;
+    let match;
+    while ((match = linkRegex.exec(html)) !== null) {
+      let href = match[1];
+      if (href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:')) continue;
+      if (href.startsWith('/')) href = domain + href;
+      else if (!href.startsWith('http')) href = domain + '/' + href;
+      try {
+        const linkUrl = new URL(href);
+        if (linkUrl.origin === domain && !links.includes(linkUrl.href)) {
+          links.push(linkUrl.href.split('#')[0].split('?')[0]);
+        }
+      } catch {}
+    }
+    return [...new Set(links)];
+  }
+
+  // Crawl website for agent training (supports multi-page)
   app.post("/api/agents/:agentId/training/crawl", async (req: Request, res: Response) => {
     try {
       const { agentId } = req.params;
-      const { url } = req.body;
+      const { url, maxPages = 10 } = req.body;
       
       if (!url) {
         return res.status(400).json({ error: "URL is required" });
       }
       
-      // Get agent to find businessId
       const [agent] = await db.select().from(agents).where(eq(agents.id, agentId));
       if (!agent) {
         return res.status(404).json({ error: "Agent not found" });
       }
       
-      // Fetch website content
-      console.log(`Crawling website: ${url}`);
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; WorkMateBot/1.0; +https://workmate.ai)',
-        },
-      });
+      const crawledUrls = new Set<string>();
+      const urlsToCrawl = [url];
+      const results: any[] = [];
+      const pageLimit = Math.min(maxPages, 50); // Increased limit for larger sites
       
-      if (!response.ok) {
-        return res.status(400).json({ error: `Failed to fetch website: ${response.status}` });
+      console.log(`Starting multi-page crawl from: ${url} (max ${pageLimit} pages)`);
+      
+      // For massive sites like Cerolauto, we prioritize key pages and deep links
+      // but keep a reasonable limit to prevent server overload.
+      // We can also suggest a Sitemap-based approach if needed.
+      
+      while (urlsToCrawl.length > 0 && crawledUrls.size < pageLimit) {
+        const currentUrl = urlsToCrawl.shift()!;
+        if (crawledUrls.has(currentUrl)) continue;
+        crawledUrls.add(currentUrl);
+        
+        try {
+          console.log(`Crawling page ${crawledUrls.size}/${pageLimit}: ${currentUrl}`);
+          const response = await fetch(currentUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WorkMateBot/1.0; +https://workmate.ai)' },
+          });
+          
+          if (!response.ok) continue;
+          
+          const html = await response.text();
+          const textContent = extractTextFromHtml(html);
+          
+          if (textContent.length < 100) continue;
+          
+          const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+          const title = titleMatch ? titleMatch[1].trim() : currentUrl;
+          
+          const [data] = await db.insert(trainingData).values({
+            businessId: agent.businessId,
+            agentId,
+            type: "website_crawl",
+            title,
+            content: textContent,
+            sourceUrl: currentUrl,
+            status: "active",
+          }).returning();
+          
+          results.push({ ...data, contentLength: textContent.length });
+          
+          if (crawledUrls.size < pageLimit) {
+            const newLinks = extractInternalLinks(html, currentUrl);
+            for (const link of newLinks) {
+              if (!crawledUrls.has(link) && !urlsToCrawl.includes(link)) {
+                urlsToCrawl.push(link);
+              }
+            }
+          }
+        } catch (err) {
+          console.log(`Failed to crawl ${currentUrl}:`, err);
+        }
       }
       
-      const html = await response.text();
-      
-      // Extract text content from HTML (simple extraction)
-      const textContent = html
-        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // Remove scripts
-        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // Remove styles
-        .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '') // Remove nav
-        .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '') // Remove footer
-        .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '') // Remove header
-        .replace(/<[^>]+>/g, ' ') // Remove HTML tags
-        .replace(/&nbsp;/g, ' ')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/\s+/g, ' ') // Normalize whitespace
-        .trim()
-        .substring(0, 50000); // Limit content size
-      
-      // Extract title
-      const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-      const title = titleMatch ? titleMatch[1].trim() : url;
-      
-      // Save to database
-      const [data] = await db.insert(trainingData).values({
-        businessId: agent.businessId,
-        agentId,
-        type: "website_crawl",
-        title,
-        content: textContent,
-        sourceUrl: url,
-        status: "active",
-      }).returning();
-      
-      console.log(`Crawled ${url}: ${textContent.length} characters`);
+      console.log(`Crawl complete: ${results.length} pages saved`);
       
       res.status(201).json({
-        ...data,
-        contentLength: textContent.length,
-        preview: textContent.substring(0, 500),
+        pagesCrawled: results.length,
+        results,
+        message: `Successfully crawled ${results.length} page${results.length !== 1 ? 's' : ''} from ${url}`,
       });
     } catch (error) {
       console.error("Error crawling website:", error);

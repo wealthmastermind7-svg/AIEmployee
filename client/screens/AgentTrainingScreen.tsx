@@ -136,7 +136,7 @@ export default function AgentTrainingScreen() {
           </ThemedText>
           <GlassCard style={styles.crawlerCard}>
             <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.md }}>
-              Enter a website URL to automatically extract content for training
+              Enter a website URL to automatically extract content for training. For large sites like Cerolauto, we'll start with the most relevant pages.
             </ThemedText>
             <View style={styles.inputRow}>
               <TextInput
