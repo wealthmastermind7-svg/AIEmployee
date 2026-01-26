@@ -935,11 +935,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Phone number is required" });
       }
 
-      // Format phone number (ensure it starts with +)
+      // Format phone number (ensure it starts with +, trim whitespace)
       // Allow for more flexible formatting (keep digits and leading plus)
-      const formattedNumber = phoneNumber.startsWith("+") 
-        ? `+${phoneNumber.replace(/\D/g, "")}` 
-        : `+${phoneNumber.replace(/\D/g, "")}`;
+      const cleanNumber = phoneNumber.trim();
+      const formattedNumber = `+${cleanNumber.replace(/\D/g, "")}`;
 
       // Check if number already exists
       const [existing] = await db.select().from(phoneNumbers)

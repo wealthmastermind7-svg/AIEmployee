@@ -143,14 +143,22 @@ export function PhoneNumberScreen({ navigation }: Props) {
 
   const deleteMutation = useMutation({
     mutationFn: async (phoneNumberId: string) => {
-      await apiRequest("DELETE", `/api/phone-numbers/${phoneNumberId}`);
+      const response = await apiRequest("DELETE", `/api/phone-numbers/${phoneNumberId}`);
+      if (!response.ok && response.status !== 204) {
+        throw new Error("Failed to delete");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/businesses/${businessId}/phone-numbers`] });
       Alert.alert("Success", "Phone number removed successfully");
     },
-    onError: () => {
-      Alert.alert("Error", "Failed to remove phone number");
+    onError: (error) => {
+      console.error("Delete error:", error);
+      Alert.alert("Error", "Failed to remove phone number. Please try again.");
+    },
+    onSettled: () => {
+      // Always reset mutation state
+      deleteMutation.reset();
     },
   });
 
