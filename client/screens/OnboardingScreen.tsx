@@ -147,14 +147,20 @@ export default function OnboardingScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.centerContent}>
-        <Animated.View entering={FadeInUp} style={styles.painCard}>
-          <View style={styles.iconCircle}>
-            <Feather name="message-square" size={32} color={theme.text} />
-          </View>
+      <Animated.View entering={FadeIn.delay(200)} style={styles.welcomeHero}>
+        <View style={styles.orbContainer}>
+          <View style={styles.orb1} />
+          <View style={styles.orb2} />
+        </View>
+        <View style={styles.iconCircle}>
+          <Feather name="message-square" size={32} color={theme.text} />
+        </View>
+      </Animated.View>
+
+      <View style={styles.welcomeContent}>
+        <Animated.View entering={FadeInUp.delay(400)}>
           <ThemedText type="h1" style={styles.gradientTitle}>Drowning in Messages</ThemedText>
-          <ThemedText style={styles.description}>Stop losing potential customers to messy, unorganized inboxes across multiple channels.</ThemedText>
-          <Image source={require("../../assets/onboarding-overwhelmed.png")} style={styles.painIllustration} />
+          <ThemedText type="body" style={styles.subtitle}>Stop losing potential customers to messy, unorganized inboxes across multiple channels.</ThemedText>
         </Animated.View>
       </View>
 
@@ -173,15 +179,24 @@ export default function OnboardingScreen() {
     <View style={[styles.page, { width: SCREEN_WIDTH }]}>
       <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
         <PaginationDots total={4} />
+        <Pressable onPress={handleComplete}>
+          <ThemedText style={styles.skipText}>Skip</ThemedText>
+        </Pressable>
       </View>
 
-      <View style={styles.centerContent}>
-        <Animated.View entering={FadeInUp} style={styles.painCard}>
-          <View style={styles.iconCircle}>
-            <Image source={require("../../assets/onboarding-clock.png")} style={styles.glassIcon} />
-          </View>
+      <Animated.View entering={FadeIn.delay(200)} style={styles.welcomeHero}>
+        <View style={styles.orbContainer}>
+          <View style={styles.orb1} />
+        </View>
+        <View style={styles.iconCircle}>
+          <Feather name="clock" size={32} color={theme.text} />
+        </View>
+      </Animated.View>
+
+      <View style={styles.welcomeContent}>
+        <Animated.View entering={FadeInUp.delay(400)}>
           <ThemedText type="h1" style={styles.gradientTitle}>Slow to Respond</ThemedText>
-          <ThemedText style={styles.description}>Modern customers expect instant answers. Every minute of delay is a lost sale.</ThemedText>
+          <ThemedText type="body" style={styles.subtitle}>Modern customers expect instant answers. Every minute of delay is a lost sale.</ThemedText>
         </Animated.View>
       </View>
 
@@ -200,15 +215,24 @@ export default function OnboardingScreen() {
     <View style={[styles.page, { width: SCREEN_WIDTH }]}>
       <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
         <PaginationDots total={4} />
+        <Pressable onPress={handleComplete}>
+          <ThemedText style={styles.skipText}>Skip</ThemedText>
+        </Pressable>
       </View>
 
-      <View style={styles.centerContent}>
-        <Animated.View entering={FadeInUp} style={styles.painCard}>
-          <View style={styles.iconCircle}>
-            <Image source={require("../../assets/onboarding-moon.png")} style={styles.glassIcon} />
-          </View>
+      <Animated.View entering={FadeIn.delay(200)} style={styles.welcomeHero}>
+        <View style={styles.orbContainer}>
+          <View style={styles.orb2} />
+        </View>
+        <View style={styles.iconCircle}>
+          <Feather name="moon" size={32} color={theme.text} />
+        </View>
+      </Animated.View>
+
+      <View style={styles.welcomeContent}>
+        <Animated.View entering={FadeInUp.delay(400)}>
           <ThemedText type="h1" style={styles.gradientTitle}>Never Off Duty</ThemedText>
-          <ThemedText style={styles.description}>WorkMate works while you sleep. Full 24/7 availability for your business without the overhead.</ThemedText>
+          <ThemedText type="body" style={styles.subtitle}>WorkMate works while you sleep. Full 24/7 availability for your business without the overhead.</ThemedText>
         </Animated.View>
       </View>
 
