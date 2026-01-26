@@ -98,7 +98,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/businesses/:id", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { name, email, phone, website, notificationsEnabled, subscriptionTier } = req.body;
+      const { name, email, phone, website, notificationsEnabled, subscriptionTier, metadata } = req.body;
       
       // Only allow updating specific fields (not ownerToken or slug)
       const safeUpdates: Record<string, any> = {};
@@ -108,6 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (website !== undefined) safeUpdates.website = website;
       if (notificationsEnabled !== undefined) safeUpdates.notificationsEnabled = notificationsEnabled;
       if (subscriptionTier !== undefined) safeUpdates.subscriptionTier = subscriptionTier;
+      if (metadata !== undefined) safeUpdates.metadata = metadata;
       
       if (Object.keys(safeUpdates).length === 0) {
         return res.status(400).json({ error: "No valid fields to update" });

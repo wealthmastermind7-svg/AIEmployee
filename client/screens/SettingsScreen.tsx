@@ -168,7 +168,24 @@ export default function SettingsScreen() {
         <Animated.View entering={FadeIn.delay(100)}>
           <GlassCard style={styles.profileCard}>
             <Pressable 
-              onPress={() => navigation.navigate("Main", { screen: "Agents" } as any)}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                Alert.prompt(
+                  "Update Workspace Name",
+                  "Enter your workspace name",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    { 
+                      text: "Update", 
+                      onPress: (name?: string) => {
+                        if (name) updateBusinessMutation.mutate({ name });
+                      } 
+                    }
+                  ],
+                  "plain-text",
+                  business?.name
+                );
+              }}
               style={styles.profileContent}
             >
               <View style={styles.profileAvatar}>
@@ -205,7 +222,7 @@ export default function SettingsScreen() {
               subtitle={business?.name || "Setup your business"}
               onPress={() => {
                 Alert.prompt(
-                  "Update Business Name",
+                  "Update Business Profile",
                   "Enter your business name",
                   [
                     { text: "Cancel", style: "cancel" },
@@ -267,15 +284,15 @@ export default function SettingsScreen() {
               icon="message-circle"
               iconColor={theme.success}
               title="Response Tone"
-              value="Professional"
+              value={business?.metadata?.responseTone || "Professional"}
               onPress={() => {
                 Alert.alert(
                   "Response Tone",
                   "Choose the default tone for AI responses",
                   [
-                    { text: "Professional", onPress: () => {} },
-                    { text: "Friendly", onPress: () => {} },
-                    { text: "Casual", onPress: () => {} },
+                    { text: "Professional", onPress: () => updateBusinessMutation.mutate({ metadata: { ...business?.metadata, responseTone: "Professional" } }) },
+                    { text: "Friendly", onPress: () => updateBusinessMutation.mutate({ metadata: { ...business?.metadata, responseTone: "Friendly" } }) },
+                    { text: "Casual", onPress: () => updateBusinessMutation.mutate({ metadata: { ...business?.metadata, responseTone: "Casual" } }) },
                     { text: "Cancel", style: "cancel" }
                   ]
                 );
@@ -286,15 +303,15 @@ export default function SettingsScreen() {
               icon="clock"
               iconColor="#f472b6"
               title="Active Hours"
-              subtitle="24/7 Enabled"
+              subtitle={business?.metadata?.activeHours || "24/7 Enabled"}
               onPress={() => {
                 Alert.alert(
                   "Active Hours",
                   "Configure when your AI agents are active",
                   [
-                    { text: "Always On (24/7)", onPress: () => {} },
-                    { text: "Business Hours", onPress: () => {} },
-                    { text: "Custom Schedule", onPress: () => {} },
+                    { text: "Always On (24/7)", onPress: () => updateBusinessMutation.mutate({ metadata: { ...business?.metadata, activeHours: "24/7 Enabled" } }) },
+                    { text: "Business Hours", onPress: () => updateBusinessMutation.mutate({ metadata: { ...business?.metadata, activeHours: "Business Hours" } }) },
+                    { text: "Custom Schedule", onPress: () => updateBusinessMutation.mutate({ metadata: { ...business?.metadata, activeHours: "Custom Schedule" } }) },
                     { text: "Cancel", style: "cancel" }
                   ]
                 );
