@@ -948,6 +948,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "This phone number is already registered" });
       }
 
+      // Automatically attempt to configure Twilio webhook if it's a Twilio number
+      if (twilioClient) {
+        try {
+          const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+            ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+            : process.env.EXPO_PUBLIC_DOMAIN
+            ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
+            : null;
+
+          if (baseUrl) {
+            const twilioNumbers = await twilioClient.incomingPhoneNumbers.list({ phoneNumber: formattedNumber });
+            if (twilioNumbers.length > 0) {
+              await twilioClient.incomingPhoneNumbers(twilioNumbers[0].sid).update({
+                voiceUrl: `${baseUrl}/api/webhooks/voice`,
+                voiceMethod: "POST",
+              });
+              console.log(`Automatically configured Twilio webhook for ${formattedNumber}`);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to auto-configure Twilio number:", error);
+          // We continue anyway as the DB record is still useful for routing if they manual config
+        }
+      }
+
       // Save to database
       const [saved] = await db.insert(phoneNumbers).values({
         businessId,
