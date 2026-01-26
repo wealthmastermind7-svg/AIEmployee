@@ -58,23 +58,7 @@ function formatTime(dateString: string): string {
 }
 
 const getChannelIcon = (channel: string): keyof typeof Feather.glyphMap => {
-  switch (channel) {
-    case "phone":
-      return "phone";
-    case "sms":
-      return "message-circle";
-    case "chat":
-    case "webchat":
-      return "message-square";
-    case "instagram":
-      return "instagram";
-    case "email":
-      return "mail";
-    case "whatsapp":
-      return "message-circle";
-    default:
-      return "message-square";
-  }
+  return "phone";
 };
 
 export default function ConversationDetailScreen() {

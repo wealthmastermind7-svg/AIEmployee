@@ -2,7 +2,7 @@
 
 ## Overview
 
-WorkMate AI Agent is a multi-tenant SaaS mobile application built with React Native (Expo) that provides businesses with AI-powered automation for customer communication across all channels. The app serves as a "virtual employee" handling voice calls, SMS, chat, and social media messaging with AI-driven responses and automation.
+WorkMate AI Agent is a multi-tenant SaaS mobile application built with React Native (Expo) that provides businesses with AI-powered voice call automation. The app serves as a "virtual employee" handling voice calls with AI-driven responses and automation.
 
 The application features a premium, cinematic design with liquid glass aesthetics, animated backgrounds with gradient orbs, and frosted glass UI components. It supports iOS, Android, and Web platforms through Expo's cross-platform capabilities.
 

@@ -160,14 +160,14 @@ export default function OnboardingScreen() {
           <View style={styles.orb2} />
         </View>
         <View style={styles.iconCircle}>
-          <Feather name="message-square" size={32} color={theme.text} />
+          <Feather name="mic" size={32} color={theme.text} />
         </View>
       </Animated.View>
 
       <View style={styles.welcomeContent}>
         <Animated.View entering={FadeInUp.delay(400)}>
-          <ThemedText type="h1" style={styles.gradientTitle}>Drowning in Messages</ThemedText>
-          <ThemedText type="body" style={styles.subtitle}>Stop losing potential customers to messy, unorganized inboxes across multiple channels.</ThemedText>
+          <ThemedText type="h1" style={styles.gradientTitle}>Human-Like Voice</ThemedText>
+          <ThemedText type="body" style={styles.subtitle}>Ultra-low latency AI voice agents that handle complex customer inquiries naturally.</ThemedText>
         </Animated.View>
       </View>
 

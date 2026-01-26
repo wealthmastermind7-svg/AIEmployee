@@ -105,9 +105,9 @@ export default function DashboardScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             navigation.navigate("Main", { screen: "Settings" } as any);
           }}>
-            <ThemedText type="body" style={{ color: theme.textSecondary }}>
-              {business?.name || "Your Business"}
-            </ThemedText>
+          <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: 4 }}>
+            Voice Agent Metrics
+          </ThemedText>
           </Pressable>
         </View>
 
@@ -147,7 +147,7 @@ export default function DashboardScreen() {
               maxValue={Math.max(stats?.totalConversations || 1, 10)}
               size={80}
               strokeWidth={5}
-              label="Active Chats"
+              label="Active Calls"
             />
           </GlassCard>
 
