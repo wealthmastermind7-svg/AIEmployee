@@ -1045,20 +1045,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`Incoming call from ${From} to ${To} (CallSid: ${CallSid})`);
 
     try {
-      // Clean incoming number (strip common characters)
-      const cleanTo = To.replace(/[^\d+]/g, '');
-      const digitsOnlyTo = To.replace(/\D/g, '');
-      console.log(`Incoming call from ${From} to ${To} (Cleaned: ${cleanTo}) (CallSid: ${CallSid})`);
-
       // Find agent associated with this number (try both formatted and clean versions)
       // Enhanced lookup for international numbers
+      const cleanTo = To.replace(/[^\d+]/g, '');
+      const digitsOnlyTo = To.replace(/\D/g, '');
+      const last10 = digitsOnlyTo.slice(-10);
+
+      console.log(`Incoming call from ${From} to ${To} (Cleaned: ${cleanTo}) (CallSid: ${CallSid})`);
+
       const [num] = await db.select().from(phoneNumbers)
         .where(sql`${phoneNumbers.phoneNumber} = ${To} 
           OR ${phoneNumbers.phoneNumber} = ${cleanTo} 
           OR ${phoneNumbers.phoneNumber} = ${digitsOnlyTo}
           OR ${phoneNumbers.phoneNumber} = ${'+' + digitsOnlyTo}
           OR ${phoneNumbers.phoneNumber} = ${To.replace('+1', '')}
-          OR ${phoneNumbers.phoneNumber} LIKE ${'%' + digitsOnlyTo.slice(-10)}`);
+          OR ${phoneNumbers.phoneNumber} LIKE ${'%' + last10}`);
       
       let agent = null;
       let business = null;
