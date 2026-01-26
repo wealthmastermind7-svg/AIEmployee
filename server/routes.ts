@@ -936,11 +936,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Format phone number (ensure it starts with +)
-      const formattedNumber = phoneNumber.startsWith("+") ? phoneNumber : `+${phoneNumber.replace(/\D/g, "")}`;
+      // Allow for more flexible formatting (keep digits and leading plus)
+      const formattedNumber = phoneNumber.startsWith("+") 
+        ? `+${phoneNumber.replace(/\D/g, "")}` 
+        : `+${phoneNumber.replace(/\D/g, "")}`;
 
       // Check if number already exists
       const [existing] = await db.select().from(phoneNumbers)
-        .where(eq(phoneNumbers.phoneNumber, formattedNumber));
+        .where(sql`${phoneNumbers.phoneNumber} = ${formattedNumber} OR ${phoneNumbers.phoneNumber} = ${phoneNumber}`);
       
       if (existing) {
         return res.status(400).json({ error: "This phone number is already registered" });
@@ -1045,11 +1048,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Clean incoming number (strip common characters)
       const cleanTo = To.replace(/[^\d+]/g, '');
+      const digitsOnlyTo = To.replace(/\D/g, '');
       console.log(`Incoming call from ${From} to ${To} (Cleaned: ${cleanTo}) (CallSid: ${CallSid})`);
 
       // Find agent associated with this number (try both formatted and clean versions)
+      // Enhanced lookup for international numbers
       const [num] = await db.select().from(phoneNumbers)
-        .where(sql`${phoneNumbers.phoneNumber} = ${To} OR ${phoneNumbers.phoneNumber} = ${cleanTo} OR ${phoneNumbers.phoneNumber} = ${To.replace('+1', '')}`);
+        .where(sql`${phoneNumbers.phoneNumber} = ${To} 
+          OR ${phoneNumbers.phoneNumber} = ${cleanTo} 
+          OR ${phoneNumbers.phoneNumber} = ${digitsOnlyTo}
+          OR ${phoneNumbers.phoneNumber} = ${'+' + digitsOnlyTo}
+          OR ${phoneNumbers.phoneNumber} = ${To.replace('+1', '')}`);
       const [agent] = num ? await db.select().from(agents).where(eq(agents.id, num.agentId!)) : [null];
 
       if (!agent) {
