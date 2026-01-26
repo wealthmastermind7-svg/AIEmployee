@@ -74,12 +74,18 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View style={styles.profileContainer}>
+          <Pressable 
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate("Main", { screen: "Settings" } as any);
+            }}
+            style={styles.profileContainer}
+          >
             <View style={styles.avatar}>
               <Feather name="user" size={20} color={theme.text} />
             </View>
             <View style={styles.statusDot} />
-          </View>
+          </Pressable>
           <AnimatedPressable
             onPress={handleNotificationPress}
             style={[styles.notificationButton, notificationStyle]}
@@ -94,12 +100,20 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.greeting}>
-          <ThemedText type="body" style={{ color: theme.textSecondary }}>
-            {business?.name || "Your Business"}
-          </ThemedText>
+          <Pressable onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            navigation.navigate("Main", { screen: "Settings" } as any);
+          }}>
+            <ThemedText type="body" style={{ color: theme.textSecondary }}>
+              {business?.name || "Your Business"}
+            </ThemedText>
+          </Pressable>
         </View>
 
-        <GlassCard style={styles.revenueCard}>
+        <GlassCard style={styles.revenueCard} onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          Alert.alert("Revenue", "Detailed revenue reports coming soon!");
+        }}>
           <ThemedText type="label" style={styles.revenueLabel}>
             Total Revenue
           </ThemedText>
@@ -117,7 +131,13 @@ export default function DashboardScreen() {
         </GlassCard>
 
         <View style={styles.metersRow}>
-          <GlassCard style={styles.meterCard}>
+          <GlassCard 
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate("Main", { screen: "Inbox" } as any);
+            }} 
+            style={styles.meterCard}
+          >
             <View style={styles.pulseIndicator}>
               <View style={[styles.pulseDot, { backgroundColor: theme.primary }]} />
             </View>
@@ -158,12 +178,14 @@ export default function DashboardScreen() {
             value="1.2s"
             progress={90}
             progressColor={theme.success}
+            onPress={() => Alert.alert("Performance", "Your average response time is optimized.")}
           />
           <StatCard
             title="Sentiment"
             value="98%"
             progress={98}
             progressColor={theme.purple}
+            onPress={() => Alert.alert("Sentiment", "Customer satisfaction is at an all-time high.")}
           />
         </View>
 
@@ -172,8 +194,15 @@ export default function DashboardScreen() {
             title="Total Agents"
             value={String(stats?.totalAgents || 0)}
             trend={{ value: "Active", isPositive: true }}
+            onPress={() => navigation.navigate("Main", { screen: "Agents" } as any)}
           />
-          <GlassCard onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)} style={styles.addCreditsCard}>
+          <GlassCard onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            Alert.alert("Credits", "Add more AI credits to your workspace?", [
+              { text: "Buy Credits", onPress: () => {} },
+              { text: "Cancel", style: "cancel" }
+            ]);
+          }} style={styles.addCreditsCard}>
             <View style={[styles.addIconContainer, { backgroundColor: `${theme.primary}20` }]}>
               <Feather name="plus" size={20} color={theme.primary} />
             </View>
@@ -188,7 +217,17 @@ export default function DashboardScreen() {
             <ThemedText type="body" style={{ fontWeight: "600" }}>
               Weekly Activity
             </ThemedText>
-            <Pressable style={styles.chartFilter}>
+            <Pressable 
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                Alert.alert("Period", "Select display period", [
+                  { text: "Last 7 Days" },
+                  { text: "Last 30 Days" },
+                  { text: "Cancel", style: "cancel" }
+                ]);
+              }}
+              style={styles.chartFilter}
+            >
               <ThemedText type="caption" style={{ color: theme.textSecondary }}>
                 Last 7 Days
               </ThemedText>
