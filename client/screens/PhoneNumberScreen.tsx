@@ -408,19 +408,17 @@ export function PhoneNumberScreen({ navigation }: Props) {
                     </ThemedText>
                   </View>
                   <View style={{ flexDirection: "row", gap: Spacing.sm }}>
-                    {!num.agentId && (
-                      <Pressable
-                        style={[styles.actionButton, { backgroundColor: theme.error + "20" }]}
-                        onPress={() => handleDelete(num)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        {deleteMutation.isPending ? (
-                          <ActivityIndicator color={theme.error} size="small" />
-                        ) : (
-                          <Feather name="trash-2" size={18} color={theme.error} />
-                        )}
-                      </Pressable>
-                    )}
+                    <Pressable
+                      style={[styles.actionButton, { backgroundColor: theme.error + "20" }]}
+                      onPress={() => handleDelete(num)}
+                      disabled={deleteMutation.isPending}
+                    >
+                      {deleteMutation.isPending ? (
+                        <ActivityIndicator color={theme.error} size="small" />
+                      ) : (
+                        <Feather name="trash-2" size={18} color={theme.error} />
+                      )}
+                    </Pressable>
                     <Pressable
                       style={[
                         styles.actionButton,
