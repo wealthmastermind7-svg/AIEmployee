@@ -1058,23 +1058,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
           OR ${phoneNumbers.phoneNumber} = ${cleanTo} 
           OR ${phoneNumbers.phoneNumber} = ${digitsOnlyTo}
           OR ${phoneNumbers.phoneNumber} = ${'+' + digitsOnlyTo}
-          OR ${phoneNumbers.phoneNumber} = ${To.replace('+1', '')}`);
-      const [agent] = num ? await db.select().from(agents).where(eq(agents.id, num.agentId!)) : [null];
+          OR ${phoneNumbers.phoneNumber} = ${To.replace('+1', '')}
+          OR ${phoneNumbers.phoneNumber} LIKE ${'%' + digitsOnlyTo.slice(-10)}`);
+      
+      let agent = null;
+      let business = null;
 
-      if (!agent) {
-        twiml.say("Thank you for calling Work Mate AI. No agent is currently assigned to this number. Please try again later.");
+      if (num) {
+        [agent] = await db.select().from(agents).where(eq(agents.id, num.agentId!));
+        if (agent) {
+          [business] = await db.select().from(businesses).where(eq(businesses.id, agent.businessId));
+        }
+      }
+
+      if (!agent || !business) {
+        twiml.say(`Thank you for calling WorkMate AI. This number is not yet fully configured. Business owner, please ensure this number is assigned to an agent in your dashboard.`);
         return res.type('text/xml').send(twiml.toString());
       }
 
       // Create conversation
       const [conversation] = await db.insert(conversations).values({
-        businessId: agent.businessId,
+        businessId: business.id,
         agentId: agent.id,
         channel: "phone",
         contactPhone: From,
       }).returning();
 
-      twiml.say(agent.initialMessage || "Hello, how can I help you?");
+      // Use business and agent specific greeting
+      const greeting = agent.initialMessage || `Hello, thank you for calling ${business.name}. How can I help you today?`;
+      twiml.say(greeting);
       
       // Real-time voice would require deeper integration with OpenAI Realtime API via Twilio Streams
       // For now, we stub a basic gathering or simple response
@@ -1187,13 +1199,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // 2. Generate AI response
-      let systemPrompt = "You are a helpful AI assistant for a business. Be professional, friendly, and helpful. Keep responses concise for voice calls.";
+      let systemPrompt = "You are a helpful AI assistant. Be professional, friendly, and helpful. Keep responses concise for voice calls.";
       let knowledgeBase = "";
 
       if (conversation.agentId) {
         const [agent] = await db.select().from(agents).where(eq(agents.id, conversation.agentId));
-        if (agent?.personality) {
-          systemPrompt = agent.personality + " Keep responses very concise (1-2 sentences) since this is a voice call.";
+        const [business] = await db.select().from(businesses).where(eq(businesses.id, conversation.businessId));
+        
+        if (agent && business) {
+          systemPrompt = `You are ${agent.name}, an AI voice agent for ${business.name}. 
+${agent.personality || "Your goal is to assist customers professionally."}
+Always identify as being from ${business.name}.
+Keep responses very concise (1-2 sentences) as this is a voice call.`;
         }
 
         // Get training data
