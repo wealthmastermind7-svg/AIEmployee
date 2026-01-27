@@ -311,33 +311,6 @@ export default function SettingsScreen() {
           </GlassCard>
         </Animated.View>
 
-        <Animated.View entering={FadeIn.delay(400)}>
-          <ThemedText type="h4" style={styles.sectionTitle}>
-            Notifications
-          </ThemedText>
-          <GlassCard noPadding style={styles.settingsGroup}>
-            <SettingItem
-              icon="bell"
-              iconColor={theme.warning}
-              title="Push Notifications"
-              hasArrow={false}
-              hasSwitch
-              switchValue={pushNotifications}
-              onSwitchChange={handleToggleNotifications}
-            />
-            <View style={styles.divider} />
-            <SettingItem
-              icon="mail"
-              iconColor="#06b6d4"
-              title="Weekly Digest"
-              hasArrow={false}
-              hasSwitch
-              switchValue={weeklyDigest}
-              onSwitchChange={setWeeklyDigest}
-            />
-          </GlassCard>
-        </Animated.View>
-
         <Animated.View entering={FadeIn.delay(500)}>
           <GlassCard noPadding style={[styles.settingsGroup, { marginTop: Spacing.xl }] as any}>
             <SettingItem
