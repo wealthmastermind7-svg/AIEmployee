@@ -82,7 +82,7 @@ export const phoneNumbers = pgTable("phone_numbers", {
   businessId: varchar("business_id").references(() => businesses.id).notNull(),
   agentId: varchar("agent_id").references(() => agents.id),
   phoneNumber: text("phone_number").unique().notNull(),
-  twilioSid: text("twilio_sid").notNull(),
+  twilioSid: text("twilio_sid"), // Optional - only set for Twilio-purchased numbers
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
