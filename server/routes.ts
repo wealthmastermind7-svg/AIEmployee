@@ -871,16 +871,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get counts
-      const agentCount = await db.select().from(agents).where(eq(agents.businessId, businessId));
-      const conversationCount = await db.select().from(conversations).where(eq(conversations.businessId, businessId));
-      const activeConversations = conversationCount.filter(c => c.status === "active");
+      const agentResult = await db.select({ count: sql<number>`count(*)` }).from(agents).where(eq(agents.businessId, businessId));
+      const convStats = await db.select({
+        total: sql<number>`count(*)`,
+        active: sql<number>`count(*) filter (where status = 'active')`,
+      }).from(conversations).where(eq(conversations.businessId, businessId));
       
       res.json({
         aiCreditsRemaining: business.aiCreditsRemaining,
         subscriptionTier: business.subscriptionTier,
-        totalAgents: agentCount.length,
-        totalConversations: conversationCount.length,
-        activeConversations: activeConversations.length,
+        totalAgents: Number(agentResult[0]?.count || 0),
+        totalConversations: Number(convStats[0]?.total || 0),
+        activeConversations: Number(convStats[0]?.active || 0),
       });
     } catch (error) {
       console.error("Error fetching stats:", error);

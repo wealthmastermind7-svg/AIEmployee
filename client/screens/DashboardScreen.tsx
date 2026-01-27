@@ -116,16 +116,16 @@ export default function DashboardScreen() {
           Alert.alert("Revenue", "Detailed revenue reports coming soon!");
         }}>
           <ThemedText type="label" style={styles.revenueLabel}>
-            Total Revenue
+            Total Calls
           </ThemedText>
           <View style={styles.revenueRow}>
             <ThemedText type="display" style={styles.revenueValue}>
-              $14,230
+              {stats?.totalConversations || 0}
             </ThemedText>
             <View style={styles.trendBadge}>
               <Feather name="trending-up" size={14} color={theme.success} />
               <ThemedText type="caption" style={{ color: theme.success, marginLeft: 4 }}>
-                +12%
+                Active
               </ThemedText>
             </View>
           </View>
