@@ -1146,13 +1146,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let numRecord = allNumbers.find(n => {
         const dbNum = n.phoneNumber;
         const normalizedDbNum = normalize(dbNum);
-        const match = dbNum === To || 
-                     normalizedDbNum === normalizedTo ||
-                     (last10.length >= 7 && normalizedDbNum.endsWith(last10)) ||
-                     (normalizedTo.length >= 7 && normalizedDbNum.endsWith(normalizedTo.slice(-7)));
         
-        console.log(`[Twilio Webhook] Checking DB number: ${dbNum} (normalized: ${normalizedDbNum}) against ${To} (normalized: ${normalizedTo}) -> Match: ${match}`);
-        return match;
+        // Exact match
+        if (dbNum === To || dbNum === `+${To}` || To === `+${dbNum}`) return true;
+        
+        // Normalized match
+        if (normalizedDbNum === normalizedTo && normalizedTo.length >= 7) return true;
+        
+        // Suffix matches (last 10 or last 7)
+        if (last10.length >= 7 && normalizedDbNum.endsWith(last10)) return true;
+        if (normalizedTo.length >= 7 && normalizedDbNum.endsWith(normalizedTo.slice(-7))) return true;
+
+        return false;
       });
       
       let agent = null;
@@ -1189,14 +1194,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Use business and agent specific greeting
       const greeting = agent.initialMessage || `Hello, thank you for calling ${business.name}. How can I help you today?`;
-      twiml.say(greeting);
+      twiml.say({
+        voice: 'Polly.Amy',
+        language: 'en-US'
+      }, greeting);
       
       // Real-time voice would require deeper integration with OpenAI Realtime API via Twilio Streams
       // For now, we stub a basic gathering or simple response
       twiml.gather({
         input: ['speech'],
         action: `/api/webhooks/voice/process?conversationId=${conversation.id}`,
-        speechTimeout: 'auto'
+        speechTimeout: 'auto',
+        language: 'en-US'
       });
 
       res.type('text/xml').send(twiml.toString());
@@ -1350,17 +1359,15 @@ Keep responses very concise (1-2 sentences) as this is a voice call.`;
         .orderBy(desc(messages.createdAt))
         .limit(6);
       
-      let chatMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
+      const chatMessages: any[] = [
         { role: "system", content: systemPrompt + knowledgeBase },
-        ...history.reverse().map(m => {
-          const role = (m.role === "agent" || m.role === "assistant") ? "assistant" : "user";
-          console.log(`[Twilio Webhook] Mapping role: ${m.role} -> ${role}`);
-          return {
-            role: role as "user" | "assistant",
-            content: m.content,
-          };
-        }),
+        ...history.reverse().map(m => ({
+          role: (m.role === "agent" || m.role === "assistant") ? "assistant" : "user",
+          content: m.content || "",
+        })),
       ];
+
+      console.log(`[Twilio Webhook] Sending ${chatMessages.length} messages to OpenAI`);
 
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
@@ -1385,11 +1392,16 @@ Keep responses very concise (1-2 sentences) as this is a voice call.`;
         .where(eq(conversations.id, conversationId));
 
       // 5. Respond and Gather again
-      twiml.say(responseContent);
+      twiml.say({
+        voice: 'Polly.Amy',
+        language: 'en-US'
+      }, responseContent);
+      
       twiml.gather({
         input: ['speech'],
         action: `/api/webhooks/voice/process?conversationId=${conversation.id}`,
-        speechTimeout: 'auto'
+        speechTimeout: 'auto',
+        language: 'en-US'
       });
 
       res.type('text/xml').send(twiml.toString());
