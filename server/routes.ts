@@ -1128,8 +1128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!num) return "";
         // Remove all non-digits
         let digits = num.replace(/\D/g, "");
-        // Remove leading country code if it exists (assuming US/NZ etc)
-        // This is a bit naive but helps with matching +1 vs 1 vs digits only
+        console.log(`[Twilio Webhook] Internal normalization: ${num} -> ${digits}`);
         return digits;
       };
 
@@ -1144,11 +1143,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[Twilio Webhook] DB Numbers (normalized):`, allNumbers.map(n => normalize(n.phoneNumber)));
 
       // Try exact match first, then normalized match, then suffix match
-      let numRecord = allNumbers.find(n => 
-        n.phoneNumber === To || 
-        normalize(n.phoneNumber) === normalizedTo ||
-        (last10.length >= 7 && normalize(n.phoneNumber).endsWith(last10))
-      );
+      let numRecord = allNumbers.find(n => {
+        const dbNum = n.phoneNumber;
+        const normalizedDbNum = normalize(dbNum);
+        const match = dbNum === To || 
+                     normalizedDbNum === normalizedTo ||
+                     (last10.length >= 7 && normalizedDbNum.endsWith(last10)) ||
+                     (normalizedTo.length >= 7 && normalizedDbNum.endsWith(normalizedTo.slice(-7)));
+        
+        console.log(`[Twilio Webhook] Checking DB number: ${dbNum} (normalized: ${normalizedDbNum}) against ${To} (normalized: ${normalizedTo}) -> Match: ${match}`);
+        return match;
+      });
       
       let agent = null;
       let business = null;
@@ -1342,12 +1347,16 @@ Keep responses very concise (1-2 sentences) as this is a voice call.`;
         .orderBy(desc(messages.createdAt))
         .limit(6);
       
-      const chatMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
+      let chatMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
         { role: "system", content: systemPrompt + knowledgeBase },
-        ...history.reverse().map(m => ({
-          role: (m.role === "agent" ? "assistant" : m.role) as "user" | "assistant",
-          content: m.content,
-        })),
+        ...history.reverse().map(m => {
+          const role = (m.role === "agent" || m.role === "assistant") ? "assistant" : "user";
+          console.log(`[Twilio Webhook] Mapping role: ${m.role} -> ${role}`);
+          return {
+            role: role as "user" | "assistant",
+            content: m.content,
+          };
+        }),
       ];
 
       const completion = await openai.chat.completions.create({
