@@ -38,7 +38,16 @@ function generateSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" + randomBytes(4).toString("hex");
 }
 
+function setupVoiceLogging(app: Express) {
+  app.use("/api/webhooks/voice", (req, res, next) => {
+    console.log(`[Twilio Webhook RAW] ${req.method} ${req.path} Headers:`, JSON.stringify(req.headers));
+    console.log(`[Twilio Webhook RAW] Body:`, JSON.stringify(req.body));
+    next();
+  });
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  setupVoiceLogging(app);
   // ========================================
   // BUSINESS ROUTES
   // ========================================
@@ -1128,6 +1137,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!num) return "";
         // Remove all non-digits
         let digits = num.replace(/\D/g, "");
+        // Keep only last 10 digits for consistent matching
+        if (digits.length > 10) digits = digits.slice(-10);
         console.log(`[Twilio Webhook] Internal normalization: ${num} -> ${digits}`);
         return digits;
       };
@@ -1140,14 +1151,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // List all numbers for debugging
       const allNumbers = await db.select().from(phoneNumbers);
       console.log(`[Twilio Webhook] DB Numbers (raw):`, allNumbers.map(n => n.phoneNumber));
-      console.log(`[Twilio Webhook] DB Numbers (normalized):`, allNumbers.map(n => normalize(n.phoneNumber)));
 
       // Try exact match first, then normalized match, then suffix match
       let numRecord = allNumbers.find(n => {
         const dbNum = n.phoneNumber;
         const normalizedDbNum = normalize(dbNum);
         
-        // Exact match
+        // Exact match (try variations with/without +)
         if (dbNum === To || dbNum === `+${To}` || To === `+${dbNum}`) return true;
         
         // Normalized match
@@ -1155,8 +1165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Suffix matches (last 10 or last 7)
         if (last10.length >= 7 && normalizedDbNum.endsWith(last10)) return true;
-        if (normalizedTo.length >= 7 && normalizedDbNum.endsWith(normalizedTo.slice(-7))) return true;
-
+        
         return false;
       });
       
@@ -1205,17 +1214,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         input: ['speech'],
         action: `/api/webhooks/voice/process?conversationId=${conversation.id}`,
         speechTimeout: 'auto',
-        language: 'en-US'
+        language: 'en-US',
+        enhanced: true,
+        speechModel: 'telephony'
       });
 
-      res.type('text/xml').send(twiml.toString());
-    } catch (error) {
+      const responseTwiml = twiml.toString();
+      console.log(`[Twilio Webhook] Greeting TwiML:`, responseTwiml);
+      res.type('text/xml').send(responseTwiml);
+    } catch (error: any) {
       console.error("[Twilio Webhook] Voice webhook error details:", error);
-      if (error instanceof Error) {
-        console.error("[Twilio Webhook] Error stack:", error.stack);
-      }
-      twiml.say("An error occurred. Please try again later.");
-      res.type('text/xml').send(twiml.toString());
+      const errorTwiml = new twilio.twiml.VoiceResponse();
+      errorTwiml.say({
+        voice: 'Polly.Amy',
+        language: 'en-US'
+      }, "I'm sorry, I encountered a connection error. Please stay on the line or try calling back in a moment.");
+      const errorResponse = errorTwiml.toString();
+      console.log(`[Twilio Webhook] Initial Error TwiML:`, errorResponse);
+      res.type('text/xml').send(errorResponse);
     }
   });
 
@@ -1392,26 +1408,27 @@ Keep responses very concise (1-2 sentences) as this is a voice call.`;
         .where(eq(conversations.id, conversationId));
 
       // 5. Respond and Gather again
-      twiml.say({
+      const responseTwiml = twiml.toString();
+      console.log(`[Twilio Webhook] Response TwiML:`, responseTwiml);
+      res.type('text/xml').send(responseTwiml);
+    } catch (error: any) {
+      console.error("[Twilio Webhook] Voice process error details:", error);
+      const errorTwiml = new twilio.twiml.VoiceResponse();
+      errorTwiml.say({
         voice: 'Polly.Amy',
         language: 'en-US'
-      }, responseContent);
-      
-      twiml.gather({
+      }, "I'm sorry, I'm having trouble hearing you. Could you please repeat that?");
+      errorTwiml.gather({
         input: ['speech'],
-        action: `/api/webhooks/voice/process?conversationId=${conversation.id}`,
+        action: `/api/webhooks/voice/process?conversationId=${conversationId}`,
         speechTimeout: 'auto',
-        language: 'en-US'
+        language: 'en-US',
+        enhanced: true,
+        speechModel: 'telephony'
       });
-
-      res.type('text/xml').send(twiml.toString());
-    } catch (error) {
-      console.error("[Twilio Webhook] Voice process error details:", error);
-      if (error instanceof Error) {
-        console.error("[Twilio Webhook] Error stack:", error.stack);
-      }
-      twiml.say("I'm sorry, I'm having trouble processing your request. Please try again later.");
-      res.type('text/xml').send(twiml.toString());
+      const errorResponse = errorTwiml.toString();
+      console.log(`[Twilio Webhook] Error Response TwiML:`, errorResponse);
+      res.type('text/xml').send(errorResponse);
     }
   });
 
