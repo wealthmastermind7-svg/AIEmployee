@@ -1201,7 +1201,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.type('text/xml').send(twiml.toString());
     } catch (error) {
-      console.error("Voice webhook error:", error);
+      console.error("[Twilio Webhook] Voice webhook error details:", error);
+      if (error instanceof Error) {
+        console.error("[Twilio Webhook] Error stack:", error.stack);
+      }
       twiml.say("An error occurred. Please try again later.");
       res.type('text/xml').send(twiml.toString());
     }
@@ -1391,7 +1394,10 @@ Keep responses very concise (1-2 sentences) as this is a voice call.`;
 
       res.type('text/xml').send(twiml.toString());
     } catch (error) {
-      console.error("Voice process error:", error);
+      console.error("[Twilio Webhook] Voice process error details:", error);
+      if (error instanceof Error) {
+        console.error("[Twilio Webhook] Error stack:", error.stack);
+      }
       twiml.say("I'm sorry, I'm having trouble processing your request. Please try again later.");
       res.type('text/xml').send(twiml.toString());
     }
