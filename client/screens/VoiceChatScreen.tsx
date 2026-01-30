@@ -169,7 +169,8 @@ export default function VoiceChatScreen({ route, navigation }: Props) {
       const reader = new FileReader();
       const base64Promise = new Promise<string>((resolve, reject) => {
         reader.onloadend = () => {
-          const base64 = (reader.result as string).split(",")[1];
+          const result = reader.result as string;
+          const base64 = result.substring(result.indexOf(",") + 1);
           resolve(base64);
         };
         reader.onerror = reject;
@@ -178,6 +179,9 @@ export default function VoiceChatScreen({ route, navigation }: Props) {
       const audioBase64 = await base64Promise;
 
       const apiUrl = getApiUrl();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
       const voiceResponse = await fetch(`${apiUrl}/api/voice/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -187,7 +191,9 @@ export default function VoiceChatScreen({ route, navigation }: Props) {
           businessId: business?.id,
           conversationId,
         }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!voiceResponse.ok) {
         const errorData = await voiceResponse.json();

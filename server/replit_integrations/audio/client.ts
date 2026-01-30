@@ -42,6 +42,8 @@ export async function voiceChat(
     modalities: ["text", "audio"],
     audio: { voice: "alloy", format: "wav" },
     messages,
+    max_tokens: 500, // Limit response length for speed
+    temperature: 0.7,
   });
 
   const choice = response.choices[0];
