@@ -9,6 +9,7 @@ import AgentTrainingScreen from "@/screens/AgentTrainingScreen";
 import { PhoneNumberScreen } from "@/screens/PhoneNumberScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import UsageScreen from "@/screens/UsageScreen";
+import VoiceChatScreen from "@/screens/VoiceChatScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { Colors } from "@/constants/theme";
 import { useBusiness } from "@/contexts/BusinessContext";
@@ -21,6 +22,7 @@ export type RootStackParamList = {
   AgentTraining: { agentId: string; agentName: string };
   PhoneNumbers: undefined;
   Usage: undefined;
+  VoiceChat: { agentId: string; agentName: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -105,6 +107,14 @@ export default function RootStackNavigator() {
         component={PhoneNumberScreen}
         options={{
           headerTitle: "Phone Numbers",
+          headerBackTitle: "Back",
+        }}
+      />
+      <Stack.Screen
+        name="VoiceChat"
+        component={VoiceChatScreen}
+        options={{
+          headerTitle: "Voice Chat",
           headerBackTitle: "Back",
         }}
       />

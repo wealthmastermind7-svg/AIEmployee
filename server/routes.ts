@@ -12,6 +12,7 @@ import { randomBytes } from "crypto";
 import OpenAI from "openai";
 import twilio from "twilio";
 import { Resend } from "resend";
+import { registerAudioRoutes } from "./replit_integrations/audio";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -48,6 +49,10 @@ function setupVoiceLogging(app: Express) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupVoiceLogging(app);
+  
+  // Register real-time voice chat routes (Replit AI Integrations)
+  registerAudioRoutes(app);
+  
   // ========================================
   // BUSINESS ROUTES
   // ========================================

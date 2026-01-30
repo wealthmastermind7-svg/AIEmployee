@@ -396,6 +396,22 @@ export default function AgentDetailScreen() {
           </GlassCard>
         </Animated.View>
 
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            navigation.navigate("VoiceChat", {
+              agentId: agent.id,
+              agentName: agent.name,
+            });
+          }}
+          style={[styles.voiceChatButton, { backgroundColor: theme.primary }]}
+        >
+          <Feather name="mic" size={20} color="#FFFFFF" />
+          <ThemedText type="body" style={{ fontWeight: "700", marginLeft: Spacing.sm, color: "#FFFFFF" }}>
+            Start Voice Chat
+          </ThemedText>
+        </Pressable>
+
         <View style={styles.actionButtons}>
           <Pressable
             onPress={() => {
@@ -610,5 +626,13 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xl,
     borderWidth: 1,
     borderColor: `${Colors.dark.error}30`,
+  },
+  voiceChatButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.lg,
+    borderRadius: BorderRadius.xl,
+    marginBottom: Spacing.lg,
   },
 });
