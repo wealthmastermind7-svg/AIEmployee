@@ -1,0 +1,192 @@
+Great, Expo is actually ideal for this. You can fully replace Twilio with Replit-native voice cleanly and stay App Store–safe.
+
+Below is a concrete, Expo-first implementation plan, no hand-waving.
+
+⸻
+
+Target Architecture (Expo + Replit, no Twilio)
+
+Expo iOS App
+ ├─ expo-av (mic capture)
+ ├─ WebSocket (audio stream)
+ └─ Replit Voice Backend
+      ├─ Built-in Speech-to-Text
+      ├─ Built-in LLM
+      └─ Built-in Text-to-Speech
+
+You will:
+	•	❌ Remove Twilio
+	•	✅ Stream audio directly
+	•	✅ Get real-time spoken replies
+
+⸻
+
+STEP 1: Remove Twilio completely (important)
+
+From your Replit backend:
+	•	Delete Twilio SDK
+	•	Remove webhook routes
+	•	Remove Media Streams logic
+
+From Expo:
+	•	Remove Twilio tokens, call logic, call state UI
+
+You want one responsibility only: audio streaming.
+
+⸻
+
+STEP 2: Expo mic capture (working code)
+
+Install:
+
+expo install expo-av
+
+Minimal mic capture setup:
+
+import { Audio } from "expo-av";
+
+let recording: Audio.Recording | null = null;
+
+export async function startMic() {
+  await Audio.requestPermissionsAsync();
+  await Audio.setAudioModeAsync({
+    allowsRecordingIOS: true,
+    playsInSilentModeIOS: true,
+  });
+
+  recording = new Audio.Recording();
+  await recording.prepareToRecordAsync({
+    isMeteringEnabled: true,
+    android: {},
+    ios: {
+      extension: ".wav",
+      audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_HIGH,
+      sampleRate: 16000,
+      numberOfChannels: 1,
+      bitRate: 256000,
+      linearPCMBitDepth: 16,
+      linearPCMIsBigEndian: false,
+      linearPCMIsFloat: false,
+    },
+  });
+
+  await recording.startAsync();
+}
+
+
+⸻
+
+STEP 3: Stream audio (NOT record whole files)
+
+Expo does not support raw PCM streaming out of the box.
+
+Correct pattern:
+	1.	Record short chunks (200–400 ms)
+	2.	Convert to Base64
+	3.	Send over WebSocket
+
+This works reliably on iOS.
+
+⸻
+
+STEP 4: WebSocket client (Expo)
+
+const ws = new WebSocket("wss://your-replit-app.replit.app/voice");
+
+ws.onmessage = (event) => {
+  playAudio(event.data); // base64 audio from Replit
+};
+
+function sendAudioChunk(base64: string) {
+  ws.send(JSON.stringify({ audio: base64 }));
+}
+
+
+⸻
+
+STEP 5: Replit backend voice handler (Node)
+
+Example conceptual handler (Replit Agent will scaffold this for you):
+
+ws.on("message", async (data) => {
+  const { audio } = JSON.parse(data);
+
+  const text = await transcribe(audio);        // managed STT
+  const reply = await reason(text);             // managed LLM
+  const speech = await synthesize(reply);       // managed TTS
+
+  ws.send(JSON.stringify({ audio: speech }));
+});
+
+You do not manage API keys or models.
+
+⸻
+
+STEP 6: Audio playback in Expo
+
+import { Audio } from "expo-av";
+
+async function playAudio(base64: string) {
+  const uri = `data:audio/wav;base64,${base64}`;
+  const { sound } = await Audio.Sound.createAsync({ uri });
+  await sound.playAsync();
+}
+
+
+⸻
+
+STEP 7: UX that passes App Store review
+
+Use:
+	•	Push-to-talk button
+	•	Visible mic indicator
+	•	Session start/stop
+	•	Clear consent text
+
+Avoid:
+	•	Always-on background recording
+	•	Hidden mic usage
+
+⸻
+
+STEP 8: Monetisation (SaaS win)
+
+Now you can:
+	•	Limit voice minutes per plan
+	•	Offer “Voice Support Pro”
+	•	Disable voice for free users
+	•	Track sessions server-side
+
+This is far cleaner than Twilio billing.
+
+⸻
+
+Why this will work
+
+Problem	Twilio	Replit Voice
+iOS compatibility	Fragile	Native
+Latency	High	Low
+Setup	Complex	Simple
+Cost predictability	Poor	Good
+Debugging	Painful	Easy
+
+
+⸻
+
+Final recommendation (very clear)
+
+Delete Twilio.
+You already built on the platform that replaced it.
+
+Replit’s announcement exists specifically for your use case.
+
+⸻
+
+Next, I can help you with one of these (pick one)
+	1.	Exact Replit WebSocket voice server code
+	2.	Expo PCM chunking workaround (advanced)
+	3.	App Store review checklist for voice apps
+	4.	Converting your existing Twilio prompts to Replit
+	5.	Voice UX design (push-to-talk vs conversational)
+
+Tell me which one you want and I’ll go deep.
