@@ -1,8 +1,8 @@
 import type { Express, Request, Response } from "express";
 import { voiceChat, transcribeAudio } from "./client";
 import { db } from "../../db";
-import { agents, businesses, conversations, messages } from "@shared/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { agents, businesses, conversations, messages, usageLogs } from "@shared/schema";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 export function registerAudioRoutes(app: Express) {
   app.use("/api/voice", (req, res, next) => {
@@ -90,6 +90,22 @@ export function registerAudioRoutes(app: Express) {
       };
       
       saveMessages(); // Fire and forget for faster response
+
+      // Log usage for voice chat (calculating as 1 credit for now to match UI, but model is cheaper)
+      try {
+        await db.insert(usageLogs).values({
+          businessId,
+          type: "voice_minute",
+          quantity: 1,
+          creditsUsed: 1, // You can adjust this to fractional if you support decimals in your credits
+        });
+        
+        await db.update(businesses)
+          .set({ aiCreditsRemaining: sql`${businesses.aiCreditsRemaining} - 1` })
+          .where(eq(businesses.id, businessId));
+      } catch (e) {
+        console.error("[Voice Chat] Usage Log Error:", e);
+      }
 
       res.json({
         success: true,

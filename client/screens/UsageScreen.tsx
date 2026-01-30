@@ -75,6 +75,16 @@ export default function UsageScreen() {
           <ThemedText type="caption" style={{ color: theme.textTertiary }}>
             Credits remaining for this billing cycle
           </ThemedText>
+          <View style={styles.costBreakdown}>
+            <View style={styles.costRow}>
+              <ThemedText type="small" style={{ color: theme.textSecondary }}>Voice Response Cost</ThemedText>
+              <ThemedText type="small" style={{ color: theme.text }}>~0.003 Credits</ThemedText>
+            </View>
+            <View style={styles.costRow}>
+              <ThemedText type="small" style={{ color: theme.textSecondary }}>Chat Response Cost</ThemedText>
+              <ThemedText type="small" style={{ color: theme.text }}>1.0 Credit</ThemedText>
+            </View>
+          </View>
         </GlassCard>
 
         <View style={styles.controlPanel}>
@@ -142,6 +152,18 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     fontSize: 48,
     lineHeight: 56,
+  },
+  costBreakdown: {
+    marginTop: Spacing.lg,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.05)",
+  },
+  costRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 4,
   },
   controlPanel: {
     marginBottom: Spacing.xl,

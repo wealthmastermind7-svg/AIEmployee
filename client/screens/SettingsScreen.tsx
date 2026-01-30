@@ -263,6 +263,14 @@ export default function SettingsScreen() {
               subtitle="Manage phone numbers for your agents"
               onPress={() => navigation.navigate("PhoneNumbers")}
             />
+            <View style={styles.divider} />
+            <SettingItem
+              icon="activity"
+              iconColor={theme.primary}
+              title="AI Usage & Billing"
+              subtitle="Track credits and manage subscription"
+              onPress={() => navigation.navigate("Usage")}
+            />
           </GlassCard>
         </Animated.View>
 
