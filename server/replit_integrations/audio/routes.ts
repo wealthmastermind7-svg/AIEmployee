@@ -27,6 +27,11 @@ export function registerAudioRoutes(app: Express) {
         return res.status(404).json({ error: "Agent not found" });
       }
 
+      // Multi-tenant check: ensure the agent belongs to the business
+      if (agent.businessId !== businessId) {
+        return res.status(403).json({ error: "Unauthorized: Agent does not belong to this business" });
+      }
+
       const [business] = await db.select().from(businesses).where(eq(businesses.id, businessId));
       if (!business) {
         return res.status(404).json({ error: "Business not found" });
